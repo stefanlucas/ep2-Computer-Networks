@@ -1,5 +1,6 @@
 require 'socket'
 require 'ipaddr'
+require 'json'
 
 class Peer
   def initialize(port, number = nil)
@@ -38,12 +39,24 @@ class Peer
   def run
     primality_test
     while not @shutdown
-      handle(@server.accept)
+      handle(@server.accept) 
     end
   end
 
   def handle(socket)
-
+    Thread.new do
+      if @leader
+        message = socket.gets.split(" ")
+        case message[0]
+          when "request_peer_info"
+            response = "leader:true"
+            socket.puts response
+          when "request_interval_queue"
+          when "request_interval"
+        end
+      end
+      
+    end
   end
 
   def primality_test
@@ -67,7 +80,13 @@ class Peer
     ips = ipscan()
     ips.each do |ip|
       begin
-      socket = TCPSocket.open(ip, @port)
+      socket = TCPSocket.open(ip, @port)          
+      socket.puts "request_peer_info"
+      response = socket.gets
+      if responde == "leader:true"
+        @leader_id = ip
+        break
+      end
       socket.close
       rescue
         next
@@ -86,7 +105,7 @@ class Peer
       Thread.new do
         status = system("ping -q -W 1 -c 1 #{ip}",
                       [:err, :out] => "/dev/null")
-      ip_array << ip.to_s if status
+        ip_array << ip.to_s if status
       end
     end
     threads.each {|t| t.join}
