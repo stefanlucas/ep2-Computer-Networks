@@ -1,4 +1,5 @@
 require 'socket'
+require 'ipaddr'
 
 class Peer
   def initialize(port, number = nil)
@@ -13,13 +14,13 @@ class Peer
     @id = nil
 
     Socket.ip_address_list.each do |addr_info|
-      if (addr_info.ip_addres =~ /192.168.*.*/) == 0
+      if (addr_info.ip_address =~ /192.168.1.*/) == 0
         @id = addr_info.ip_address
       end 
     end
     puts @id
     if @id == nil
-      puts "Erro, deveria existir uma interface lan com ip 192.168.*.*"
+      puts "Erro, deveria existir uma interface lan com ip 192.168.1.*"
       exit(1)
     end
 
@@ -36,21 +37,17 @@ class Peer
 
   def run
     primality_test
-    while not shutdown
+    while not @shutdown
       handle(@server.accept)
     end
   end
 
   def handle(socket)
-    
-  end
-
-  def receive_message(id)
 
   end
 
-  def primalitiy_test
-    Thread.new {
+  def primality_test
+    Thread.new do
       while true
         for i in @interval[:low]..@interval[:high]
           puts "testando " + i.to_s
@@ -63,27 +60,37 @@ class Peer
         puts "Nenhum número do intervalo [" + low.to_s + ", " + high.to_s + "] divide " + @number.to_s
         break
       end
-    }
-  end
-
-  def connect_leader
-    for i in 0..255
-        hostname = "192.168.1." + i.to_s
-        if (s = TCPSocket.open(hostname, @port))
-          s.puts "are_you_leader?"
-          answer = s.gets
-          if answer == "yes"
-            puts "A maquina se conectou ao lider"
-            s.puts "fetch_id"
-            @leader_id = s.gets 
-            puts "Id do líder:" + @leader_id.to_s
-          end
-          s.close
-      end
     end
   end
 
+  def connect_leader
+    ips = ipscan()
+    ips.each do |ip|
+      begin
+      socket = TCPSocket.open(ip, @port)
+      socket.close
+      rescue
+        next
+      end
+    end
+    puts "End connections"
+  end
+
   def leader_election
+  end
+
+  def ipscan
+    ips = IPAddr.new("192.168.1.0/24").to_range
+    ip_array = []
+    threads = ips.map do |ip|
+      Thread.new do
+        status = system("ping -q -W 1 -c 1 #{ip}",
+                      [:err, :out] => "/dev/null")
+      ip_array << ip.to_s if status
+      end
+    end
+    threads.each {|t| t.join}
+    return ip_array
   end
 end
 
