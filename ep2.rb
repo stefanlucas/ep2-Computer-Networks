@@ -2,97 +2,102 @@ require 'socket'
 require 'ipaddr'
 require 'json'
 
+Thread.abort_on_exception=true
+
 class Peer
   def initialize(port, number = nil)
     @server = TCPServer.open(port)
     @port = port
     @number = number
-    @is_prime = true
     @shutdown = false
     @interval = Hash.new
     @interval_queue = Array.new
     @peers = Hash.new
     @id = nil
-
     Socket.ip_address_list.each do |addr_info|
       if (addr_info.ip_address =~ /192.168.1.*/) == 0
         @id = addr_info.ip_address
       end 
     end
-    puts @id
     if @id == nil
       puts "Erro, deveria existir uma interface lan com ip 192.168.1.*"
       exit(1)
     end
-
     if number != nil
       @leader = true
-      @interval = {low: 2, high: Math.sqrt(number).to_i}
+      @interval = {low: 2, high: number.abs}
     else 
       @leader = false
-      connect_leader
+      connect_peers
     end
 
     run
   end
 
   def run
-    primality_test
+    #primality_test
     while not @shutdown
       handle(@server.accept) 
     end
   end
 
   def handle(socket)
-    Thread.new do
+    Thread.new {
+      puts "Entrou na thread de handle"
+      message = socket.gets.split(" \n\r")
       if @leader
-        message = socket.gets.split(" ")
         case message[0]
           when "request_peer_info"
-            response = "leader:true"
+            response = "leader=true"
             socket.puts response
           when "request_interval_queue"
           when "request_interval"
         end
+      else # tratar mensagens de um peer normal
+        
       end
-      
-    end
+    }
   end
 
   def primality_test
-    Thread.new do
-      while true
-        for i in @interval[:low]..@interval[:high]
-          puts "testando " + i.to_s
-          if @number % i == 0
-            @is_prime = false
-            puts "O número não é primo"
-            exit(0)
-          end 
-        end
-        puts "Nenhum número do intervalo [" + low.to_s + ", " + high.to_s + "] divide " + @number.to_s
-        break
+    Thread.new {
+      if @number.abs == 1 or @number.abs == 0
+        puts "Não é primo"
+        exit(0)
       end
-    end
+      for i in @interval[:low]..@interval[:high]
+        puts i
+        if @number % i == 0
+          puts "Não é primo"
+          exit(0)
+        end
+      end
+      puts "eh primo"
+      exit(0)
+    }
   end
 
-  def connect_leader
+  def connect_peers
     ips = ipscan()
     ips.each do |ip|
       begin
-      socket = TCPSocket.open(ip, @port)          
-      socket.puts "request_peer_info"
-      response = socket.gets
-      if responde == "leader:true"
-        @leader_id = ip
-        break
-      end
-      socket.close
+        next if @id = ip
+        socket = TCPSocket.open(ip, @port)
+        puts "Connected to peer from " + socket.peeraddr[3]          
+        socket.puts "request_peer_info"
+        puts "Received request_peer_info response from " + socket.peeraddr[3]
+        response = socket.gets
+        response.split(/[ \r\n]/)
+        if response[0] == "leader:true"
+          @leader_id = ip
+        end
+        @peers[socket.peeraddr[3]] = true         
+        socket.close
       rescue
         next
       end
     end
-    puts "End connections"
+    puts "End finding connections"
   end
 
   def leader_election
