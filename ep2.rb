@@ -79,16 +79,18 @@ class Peer
     ips = ipscan()
     ips.each do |ip|
       begin
-        next if @id = ip
+        next if @id == ip
         socket = TCPSocket.open(ip, @port)
         puts "Connected to peer from " + socket.peeraddr[3]          
         socket.puts "request_peer_info"
         puts "Received request_peer_info response from " + socket.peeraddr[3]
         response = socket.gets.split(/[ \r\n]/)
         if response[0] == "leader:true"
+          puts "Peer with " + ip + "is the leader"
           @leader_id = ip
         end
-        @peers[socket.peeraddr[3]] = true         
+        @peers[socket.peeraddr[3]] = Hash.new
+        @peers[socket.peeraddr[3]]         
         socket.close
       rescue
         next
