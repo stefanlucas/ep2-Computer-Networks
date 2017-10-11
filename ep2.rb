@@ -43,15 +43,16 @@ class Peer
 
   def handle(socket)
     Thread.new {
-      puts "Entrou na thread de handle"
+      puts "Peer " + socket.peeraddr[3] + " mandou uma mensagem"
       message = socket.gets.split(" \n\r")
+      puts "mensagem = " + message[0]
       if @leader
         case message[0]
-          when "request_peer_info"
-            response = "leader=true"
-            socket.puts response
-          when "request_interval_queue"
-          when "request_interval"
+        when "request_peer_info"
+          socket.puts "leader=true"
+        else
+          puts "Num intindi o q ele falo"
+          socket.puts "Num intindi o q ce falo"
         end
       else # tratar mensagens de um peer normal
         
@@ -63,17 +64,14 @@ class Peer
     Thread.new {
       if @number.abs == 1 or @number.abs == 0
         puts "Não é primo"
-        exit(0)
       end
       for i in @interval[:low]..@interval[:high]
         puts i
         if @number % i == 0
           puts "Não é primo"
-          exit(0)
         end
       end
       puts "eh primo"
-      exit(0)
     }
   end
 
@@ -86,7 +84,7 @@ class Peer
         puts "Connected to peer from " + socket.peeraddr[3]          
         socket.puts "request_peer_info"
         puts "Received request_peer_info response from " + socket.peeraddr[3]
-        response = socket.gets
+        response = socket.chomp.gets.split!(/[ \r\n]/)
         response.split(/[ \r\n]/)
         if response[0] == "leader:true"
           @leader_id = ip
