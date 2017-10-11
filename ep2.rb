@@ -84,8 +84,7 @@ class Peer
         puts "Connected to peer from " + socket.peeraddr[3]          
         socket.puts "request_peer_info"
         puts "Received request_peer_info response from " + socket.peeraddr[3]
-        response = socket.chomp.gets.split!(/[ \r\n]/)
-        response.split(/[ \r\n]/)
+        response = socket.gets.split(/[ \r\n]/)
         if response[0] == "leader:true"
           @leader_id = ip
         end
