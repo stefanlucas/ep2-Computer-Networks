@@ -44,11 +44,12 @@ class Peer
   def handle(socket)
     Thread.new {
       puts "Peer " + socket.peeraddr[3] + " mandou uma mensagem"
-      message = socket.gets.split(" \n\r")
+      message = socket.gets.split(/[ \r\n]/)
       puts "mensagem = " + message[0]
       if @leader
         case message[0]
         when "request_peer_info"
+          puts "sent that im the leader"
           socket.puts "leader=true"
         else
           puts "Num intindi o q ele falo"
