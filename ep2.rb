@@ -48,7 +48,7 @@ class Peer
     Thread.new {
       message = socket.gets
       puts "Peer " + socket.peeraddr[3] + " request: " + message
-      message.split!(/[ \r\n]/)
+      message = message.split(/[ \r\n]/)
       if @peers[socket.peeraddr[3]] == nil
         @peers[socket.peeraddr[3]] = Hash.new
       end
@@ -130,13 +130,12 @@ class Peer
     ips = ipscan()
     ips.each do |ip|
       begin
-        next if @id == ip
-        puts "Connected to peer from " + ip
-        socket = TCPSocket.open(ip, @port)          
+        socket = TCPSocket.open(ip, @port)
+        puts "Connected to peer from " + ip          
         socket.puts "leader?"
         response = socket.gets
         puts "Received response " + response.chomp 
-        response.split!(/[ \r\n]/)
+        response = response.split(/[ \r\n]/)
         if response[0] == "yes"
           puts "Peer with ip " + ip + " is the leader"
           @leader_id = ip
@@ -144,7 +143,7 @@ class Peer
           socket.puts "get_computation_info"
           response = socket.gets
           puts "Received response " + response.chomp
-          response.split!(/[ \r\n]/)
+          response = response.split(/[ \r\n]/)
           @number = response[0].to_i
           x, y = response[1].split(",")
           @remaining_interval[:low], @remaining_interval[:high] = x.to_i, y.to_i
