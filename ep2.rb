@@ -1,8 +1,9 @@
 require 'socket'
 require 'ipaddr'
-require 'json'
 
 Thread.abort_on_exception=true
+r_interval_mutex = Mutex.new
+$quantum = 100000
 
 class Peer
   def initialize(port, number = nil)
@@ -12,8 +13,10 @@ class Peer
     @shutdown = false
     @interval = Hash.new
     @interval_queue = Array.new
+    @remaining_interval = Hash.new
     @peers = Hash.new
     @id = nil
+
     Socket.ip_address_list.each do |addr_info|
       if (addr_info.ip_address =~ /192.168.1.*/) == 0
         @id = addr_info.ip_address
@@ -25,7 +28,7 @@ class Peer
     end
     if number != nil
       @leader = true
-      @interval = {low: 2, high: number.abs}
+      @remaining_interval = @interval = {low: 2, high: number.abs-1}
     else 
       @leader = false
       connect_peers
@@ -35,7 +38,7 @@ class Peer
   end
 
   def run
-    #primality_test
+    primality_test
     while not @shutdown
       handle(@server.accept) 
     end
@@ -43,33 +46,79 @@ class Peer
 
   def handle(socket)
     Thread.new {
-      puts "Peer " + socket.peeraddr[3] + " mandou uma mensagem"
-      message = socket.gets.split(/[ \r\n]/)
-      puts "mensagem = " + message[0]
+      message = socket.gets
+      puts "Peer " + socket.peeraddr[3] + " request: " + message
+      message.split!(/[ \r\n]/)
+      if @peers[socket.peeraddr[3]] == nil
+        @peers[socket.peeraddr[3]] = Hash.new
+      end
       if @leader
         case message[0]
-        when "request_peer_info"
-          puts "sent that im the leader"
-          socket.puts "leader=true"
+        when "leader?"
+          socket.puts "yes"
+        when "get_computation_info"
+        when "new_interval"
+          r_interval_mutex.synchronize {
+            has_interval = true
+            if remaining_interval[:low] >= remaining_interval[:high]
+              if @interval_queue.empty?
+                has_interval = false
+                @peers[socket.peeraddr[3]][:low] = @peers[socket.peeraddr[3]][:high] = nil
+                socket.puts "no_interval"
+              else
+                low, high = @interval_queue.shift                  
+              end
+            else 
+              low = @remaining_interval[:low]
+              if @remaining_interval[:low] + quantum + 1 > @remaining_interval[:high]
+                high = @remaining_interval[:high]
+                @remaining_interval[:low] = @remaining_interval[:high]
+              else
+                high = low + quantum
+                @remaining_interval[:low] += (quantum + 1) 
+              end
+            end
+            if has_interval
+              socket.puts low.to_s + "," + high.to_s
+              @peers[socket.peeraddr[3]][:low] = low
+              @peers[socket.peeraddr[3]][:high] = high
+            end                        
+          }
         else
-          puts "Num intindi o q ele falo"
-          socket.puts "Num intindi o q ce falo"
+          socket.puts "Could not resolve message"
         end
-      else # tratar mensagens de um peer normal
-        
+      else
+        case message[0] 
+        when "peer_info"
+          socket.puts @interval[:low] + "," + @interval[:high]
+        when "leader?"
+          socket.puts "no"
+        when "ping"
+          socket.puts "pong"
+        when "finish_interval_computation"
+          socket.puts "ok"
+        when "not_prime"
+          socket.puts "ok"
+          puts "Number is not prime " + message[1] + " divides " + @number.to_s
+          exit(0) 
+        else
+          socket.puts "Could not resolve message"
+        end
       end
+      socket.close
     }
   end
 
   def primality_test
-    Thread.new {
+    tr = Thread.new {
       if @number.abs == 1 or @number.abs == 0
         puts "Não é primo"
+        Thread.exit 
       end
       for i in @interval[:low]..@interval[:high]
-        puts i
         if @number % i == 0
           puts "Não é primo"
+          Thread.exit
         end
       end
       puts "eh primo"
@@ -77,25 +126,48 @@ class Peer
   end
 
   def connect_peers
+    while @leader_id == nil
     ips = ipscan()
     ips.each do |ip|
       begin
         next if @id == ip
-        socket = TCPSocket.open(ip, @port)
-        puts "Connected to peer from " + socket.peeraddr[3]          
-        socket.puts "request_peer_info"
-        puts "Received request_peer_info response from " + socket.peeraddr[3]
-        response = socket.gets.split(/[ \r\n]/)
-        if response[0] == "leader=true"
-          puts "Peer with " + ip + "is the leader"
+        puts "Connected to peer from " + ip
+        socket = TCPSocket.open(ip, @port)          
+        socket.puts "leader?"
+        response = socket.gets
+        puts "Received response " + response.chomp 
+        response.split!(/[ \r\n]/)
+        if response[0] == "yes"
+          puts "Peer with ip " + ip + " is the leader"
           @leader_id = ip
+          socket = TCPSocket.open(ip, @port)
+          socket.puts "get_computation_info"
+          response = socket.gets
+          puts "Received response " + response.chomp
+          response.split!(/[ \r\n]/)
+          @number = response[0].to_i
+          x, y = response[1].split(",")
+          @remaining_interval[:low], @remaining_interval[:high] = x.to_i, y.to_i
+          for i in 2..(response.size - 1) 
+            low, high = response[i].split(",")
+            @interval_queue << {low: low.to_i, high: high.to_i}
+          end
+          socket = TCPSocket.open(ip, @port)
+          socket.puts "new_interval"
+          response = socket.gets.chomp.split([/, \r\n/])
+          @interval[:low] = response[0].to_i
+          @interval[:high] = response[1].to_i
         end
-        @peers[socket.peeraddr[3]] = Hash.new
-        @peers[socket.peeraddr[3]]         
-        socket.close
+        @peers[ip] = Hash.new
+        socket = TCPSocket.open(ip, @port)
+        socket.puts "peer_info"
+        response = socket.gets.chomp.split([/, \r\n/]) 
+        @peers[ip][:low] = response[0].to_i
+        @peers[ip][:high] = response[1].to_i        
       rescue
         next
       end
+    end
     end
     puts "End finding connections"
   end

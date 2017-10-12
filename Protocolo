@@ -1,0 +1,30 @@
+Request feito apenas pelo líder.
+request: election_now!
+response: yes_sir! 
+
+Requests de um peer para o líder:
+request: get_computation_info
+response: number x,y(remaining_interval) l1,h1 l2,h2 l3,h3 l4,h4 ... lk,hk(interval_queue) 
+
+request: new_interval
+response se tiver intervalo: x,y
+caso contrário: no_interval 
+
+Request de qualquer peer qualquer peer
+request: peer_info
+response: x,y(current computation)
+
+request: leader?
+response: yes|no
+
+request: ping
+response: pong
+
+broadcast: finish_interval_computation x,y => nesse caso exclui o intervalo da lista de pendencias 
+response: ok
+
+broadcast: not_prime i (number which divides n)
+response: ok
+
+Por enquanto o líder deve guardar o intervalo que cada peer ta computando, se o peer se desconectar ele bota isso na fila de intervalo
+cada quantum tem tamanho 10000
