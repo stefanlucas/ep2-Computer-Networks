@@ -15,7 +15,7 @@ class Peer
     @peers = Hash.new
     @id = nil
     @mutex = Mutex.new
-    @quantum = 100000
+    @quantum = 1000000000
     
     Socket.ip_address_list.each do |addr_info|
       if (addr_info.ip_address =~ /192.168.1.*/) == 0
@@ -33,8 +33,8 @@ class Peer
       else
         high = @quantum
       end
-      @remaining_interval = {low: 2, high: number.abs - 1}
       @interval = {low: 2, high: high}
+      @remaining_interval = {low: high + 1, high: number.abs - 1}
     else 
       @leader = false
       connect_peers
@@ -84,7 +84,7 @@ class Peer
               low, high = select_interval()
             end
             if has_interval
-              puts "mandando intervalo " + low.to_s + "," + high.to_s
+              puts "sending interval " + low.to_s + "," + high.to_s
               line = low.to_s + "," + high.to_s
               socket.puts line
               @peers[socket.peeraddr[3]][:low], @peers[socket.peeraddr[3]][:high] = low, high
@@ -137,11 +137,24 @@ class Peer
       for i in @interval[:low]..@interval[:high]
         if @number % i == 0
           puts "Não é primo"
-          Thread.exit
+          message = "not_prime" + " " + i
+          broadcast(message)
         end
       end
-      puts "eh primo"
+      message = "finish_interval_computation" + @interval[:low] + "," + @interval[:high]
+      broadcast(message)
     }
+  end
+
+  def broadcast(message)
+    @peers.each do |id|
+      begin
+        socket = TCPSocket.open(id, @port)
+        socket.puts message
+      rescue
+        next
+      end
+    end
   end
 
   def connect_peers
@@ -150,7 +163,7 @@ class Peer
     #ips.each do |ip|
     #  begin
     #    next if ip == @id
-    ip = "192.168.1.105"
+    ip = "192.168.1.109"
         socket = TCPSocket.open(ip, @port)
         puts "Connected to peer from " + ip          
         socket.puts "leader?"

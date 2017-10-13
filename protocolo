@@ -3,18 +3,18 @@ request: election_now!
 response: yes_sir! 
 
 Requests de um peer para o líder:
-request: get_computation_info
+request: get_computation_info check
 response: number x,y(remaining_interval) l1,h1 l2,h2 l3,h3 l4,h4 ... lk,hk(interval_queue) 
 
-request: new_interval
+request: new_interval check
 response se tiver intervalo: x,y
 caso contrário: no_interval 
 
 Request de qualquer peer qualquer peer
-request: peer_info
+request: peer_info check
 response: x,y(current computation)
 
-request: leader?
+request: leader? check
 response: yes|no
 
 request: ping
