@@ -1,10 +1,8 @@
 require 'socket'
 require 'ipaddr'
+require 'thread'
 
 Thread.abort_on_exception=true
-r_interval_mutex = Mutex.new
-$quantum = 100000
-
 class Peer
   def initialize(port, number = nil)
     @server = TCPServer.open(port)
@@ -16,7 +14,9 @@ class Peer
     @remaining_interval = Hash.new
     @peers = Hash.new
     @id = nil
-
+    @mutex = Mutex.new
+    @quantum = 100000
+    
     Socket.ip_address_list.each do |addr_info|
       if (addr_info.ip_address =~ /192.168.1.*/) == 0
         @id = addr_info.ip_address
@@ -28,7 +28,13 @@ class Peer
     end
     if number != nil
       @leader = true
-      @remaining_interval = @interval = {low: 2, high: number.abs-1}
+      if @quantum > (number.abs - 1)
+        high = number.abs - 1
+      else
+        high = @quantum
+      end
+      @remaining_interval = {low: 2, high: number.abs - 1}
+      @interval = {low: 2, high: high}
     else 
       @leader = false
       connect_peers
@@ -57,10 +63,16 @@ class Peer
         when "leader?"
           socket.puts "yes"
         when "get_computation_info"
+          line = @number.to_s + " " + @remaining_interval[:low].to_s + "," + @remaining_interval[:high].to_s
+          @interval_queue.each do |interval|
+            line += " " + interval[:low].to_s + interval[:high].to_s
+          end
+          puts line
+          socket.puts line
         when "new_interval"
-          r_interval_mutex.synchronize {
+          @mutex.synchronize {
             has_interval = true
-            if remaining_interval[:low] >= remaining_interval[:high]
+            if @remaining_interval[:low] >= @remaining_interval[:high]
               if @interval_queue.empty?
                 has_interval = false
                 @peers[socket.peeraddr[3]][:low] = @peers[socket.peeraddr[3]][:high] = nil
@@ -69,44 +81,50 @@ class Peer
                 low, high = @interval_queue.shift                  
               end
             else 
-              low = @remaining_interval[:low]
-              if @remaining_interval[:low] + quantum + 1 > @remaining_interval[:high]
-                high = @remaining_interval[:high]
-                @remaining_interval[:low] = @remaining_interval[:high]
-              else
-                high = low + quantum
-                @remaining_interval[:low] += (quantum + 1) 
-              end
+              low, high = select_interval()
             end
             if has_interval
-              socket.puts low.to_s + "," + high.to_s
-              @peers[socket.peeraddr[3]][:low] = low
-              @peers[socket.peeraddr[3]][:high] = high
+              puts "mandando intervalo " + low.to_s + "," + high.to_s
+              line = low.to_s + "," + high.to_s
+              socket.puts line
+              @peers[socket.peeraddr[3]][:low], @peers[socket.peeraddr[3]][:high] = low, high
             end                        
           }
-        else
-          socket.puts "Could not resolve message"
         end
+      end
+      case message[0] 
+      when "peer_info"
+        response = @interval[:low].to_s + "," + @interval[:high].to_s
+        puts "response: " + response
+        socket.puts response
+      when "leader?"
+        socket.puts "no"
+      when "ping"
+        socket.puts "pong"
+      when "finish_interval_computation"
+        socket.puts "ok"
+      when "not_prime"
+        socket.puts "ok"
+        puts "Number is not prime " + message[1] + " divides " + @number.to_s
+        exit(0) 
       else
-        case message[0] 
-        when "peer_info"
-          socket.puts @interval[:low] + "," + @interval[:high]
-        when "leader?"
-          socket.puts "no"
-        when "ping"
-          socket.puts "pong"
-        when "finish_interval_computation"
-          socket.puts "ok"
-        when "not_prime"
-          socket.puts "ok"
-          puts "Number is not prime " + message[1] + " divides " + @number.to_s
-          exit(0) 
-        else
-          socket.puts "Could not resolve message"
-        end
+        socket.puts "Could not resolve message"
       end
       socket.close
     }
+  end
+
+  def select_interval
+    low = @remaining_interval[:low]
+    if @remaining_interval[:low] + @quantum + 1 > @remaining_interval[:high]
+      high = @remaining_interval[:high]
+      @remaining_interval[:low] = @remaining_interval[:high]
+    else
+      high = low + @quantum
+      @remaining_interval[:low] += (@quantum + 1) 
+    end
+
+    return [low, high]
   end
 
   def primality_test
@@ -115,6 +133,7 @@ class Peer
         puts "Não é primo"
         Thread.exit 
       end
+      puts "testando o intervalo " + @interval[:low].to_s + "," + @interval[:high].to_s
       for i in @interval[:low]..@interval[:high]
         if @number % i == 0
           puts "Não é primo"
@@ -126,10 +145,12 @@ class Peer
   end
 
   def connect_peers
-    while @leader_id == nil
-    ips = ipscan()
-    ips.each do |ip|
-      begin
+    #while @leader_id == nil
+    #ips = ipscan()
+    #ips.each do |ip|
+    #  begin
+    #    next if ip == @id
+    ip = "192.168.1.105"
         socket = TCPSocket.open(ip, @port)
         puts "Connected to peer from " + ip          
         socket.puts "leader?"
@@ -152,22 +173,29 @@ class Peer
             @interval_queue << {low: low.to_i, high: high.to_i}
           end
           socket = TCPSocket.open(ip, @port)
+          puts "Requesting new interval"
           socket.puts "new_interval"
-          response = socket.gets.chomp.split([/, \r\n/])
+          response = socket.gets
+          puts "Response: " + response
+          response = response.chomp.split(/[,\r\n]/) 
           @interval[:low] = response[0].to_i
           @interval[:high] = response[1].to_i
         end
         @peers[ip] = Hash.new
         socket = TCPSocket.open(ip, @port)
+        puts "Requesting peer info"
         socket.puts "peer_info"
-        response = socket.gets.chomp.split([/, \r\n/]) 
+        response = socket.gets
+        puts "Response " + response
+        response = response.chomp.split(/[,\r\n]/)
         @peers[ip][:low] = response[0].to_i
         @peers[ip][:high] = response[1].to_i        
-      rescue
-        next
-      end
-    end
-    end
+    #  rescue => error
+    #      $!.backtrace
+    #    next
+    #  end
+    #end
+    #end
     puts "End finding connections"
   end
 
