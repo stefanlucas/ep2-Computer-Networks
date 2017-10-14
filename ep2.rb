@@ -19,7 +19,6 @@ class Peer
     @leader_id = nil
 
     @mutex = Mutex.new
-    @peer_mutex = Mutex.new
 
     Socket.ip_address_list.each do |addr_info|
       if (addr_info.ip_address =~ /192.168.1.*/) == 0
@@ -210,17 +209,23 @@ class Peer
             if @number % i == 0
               puts "Não é primo " + i.to_s + " divide " + @number.to_s
               message = "not_prime" + " " + i.to_s
-              broadcast(message)
+              @mutex.synchronize {
+                broadcast(message)
+              }
               exit(0)
             end
             i += 1
           end
           message = "finish_interval_computation" + " " + @interval[:low].to_s + "," + @interval[:high].to_s
-          broadcast(message)
+          @mutex.synchronize {
+            broadcast(message)
+          }
         end
         if @leader
           if check_end() == true
-            broadcast("is_prime")
+            @mutex.synchronize {
+              broadcast("is_prime")
+            }
             puts "O número é primo"
             exit(0)
           end 
@@ -257,7 +262,6 @@ class Peer
   end
 
   def heartbeat
-    @mutex.synchronize {
     @peers.each_key do |id|
       socket = try_connect(id)
       if socket != false
@@ -272,18 +276,14 @@ class Peer
         @peers[id][:status] = "lost"
         puts "maquina " + id + " caiu, colocando intervalo na fila de pendentes"
         if @peers[id][:low] != false and @peers[id][:low] != nil
-          @mutex.synchronize {
-            @interval_queue << {low: @peers[id][:low], high: @peers[id][:high]}
-          }
+          @interval_queue << {low: @peers[id][:low], high: @peers[id][:high]}
           @peers[id][:low] = @peers[id][:high] = false 
         end
       end  
     end
-    }
   end
 
   def broadcast(message)
-    @peer_mutex.synchronize {
       @peers.each_key do |id|
         begin
           if message == "is_prime" || message == "not_prime"
@@ -296,7 +296,6 @@ class Peer
           next
         end
       end
-    }
   end
 
   def connect_peers
