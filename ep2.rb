@@ -67,9 +67,13 @@ class Peer
       message = socket.gets
       puts "Peer " + socket.peeraddr[3] + " request: " + message
       message = message.split(/[ \r\n]/)
-      if @peers[socket.peeraddr[3]] == nil
+      if @peers[socket.peeraddr[3]] == nil # caso em que é a primeira vez que o peer se conecta à rede 
         puts "He just connected to the network"
         @peers[socket.peeraddr[3]] = Hash.new
+        @peers[socket.peeraddr[3]][:status] = "connected"
+      elsif @peers[socket.peeraddr[3]][:status] == "lost" # caso a conexão do peer tenha caido anteriormente
+        puts socket.peeraddr[3] + "reconnected to the network"
+        @peers[socket.peeraddr[3]][:status] = "reconnected"
       end
       case message[0]
         when "leader?"
@@ -85,14 +89,14 @@ class Peer
           end
         when "new_interval"
           @mutex.synchronize {
-          if @peers[socket.peeraddr[3]][:low] == false || @peers[socket.peeraddr[3]][:low] == nil #se o peer não saiu antes sem terminar o trabalho  
+          if @peers[socket.peeraddr[3]][:low] == false || @peers[socket.peeraddr[3]][:low] == nil #se o peer realmente terminou o trabalho ou é a primeira vez que ele entra   
             @peers[socket.peeraddr[3]][:low], @peers[socket.peeraddr[3]][:high] = select_interval()
             if @peers[socket.peeraddr[3]][:low] == false
               response = "no_interval"
             else
               response = @peers[socket.peeraddr[3]][:low].to_s + "," + @peers[socket.peeraddr[3]][:high].to_s
             end         
-          else
+          else #caso o peer tenha se desconectado anteriormente sem terminar o trabalho
             response = @peers[socket.peeraddr[3]][:low].to_s + "," + @peers[socket.peeraddr[3]][:high].to_s
           end 
           }                       
@@ -158,8 +162,8 @@ class Peer
       @peers.each_key do |id| 
         if (@peers[id][:low] != false && @peers[id][:high] != false)
           puts "teste pendente: " + @peers[id][:low].to_s + ", " + @peers[id][:high].to_s
-          socket = false
-          if (socket = try_connect(id)) == false
+          socket = try_connect(id)
+          if socket == false
             puts "maquina " + id + " caiu, colocando intervalo na fila de pendentes"
             @interval_queue.push({low: @peers[id][:low], high: @peers[id][:high]})
             @peers[id][:low] = @peers[id][:high] = false
@@ -179,7 +183,7 @@ class Peer
     tr = Thread.new {
       loop {
         puts "testing interval " + @interval[:low].to_s + "," + @interval[:high].to_s
-        if @interval[:low] != false and @interval[:low] != false
+        if @interval[:low] != false and @interval[:low] != false and @interval[:low] != nil and @interval[:high] != nil
           i = @interval[:low]
           while i <= @interval[:high] do
             if @number % i == 0
@@ -224,10 +228,30 @@ class Peer
               response = response.split(",")
               @interval[:low], @interval[:high] = response[0].to_i, response[1].to_i
             }          
-          end  
+          end
+
         end
       }
     }
+  end
+
+  def heartbeat
+    @peers.each_key do |id|
+      socket = try_connect(id)
+      if socket == false)
+        @peers[id][:status] = "lost"
+        puts "maquina " + id + " caiu, colocando intervalo na fila de pendentes"
+        if @peers[id][:low] != false && @peers[id][:high] != false
+          @mutex.synchronize {
+            @interval_queue << {low: @peers[id][:low], high: @peers[id][:high]}
+          }
+          @peers[id][:low] = @peers[id][:high] = false 
+        end
+      else
+        socket.puts "ping"
+        socket.gets
+      end  
+    end
   end
 
   def broadcast(message)
@@ -256,7 +280,6 @@ class Peer
         if ip == @id
           next
         end 
-        puts "entrou aqui ip = " + ip
         response = nil
         socket = Socket.tcp(ip, @port, connect_timeout: 1) { |socket|
           puts "Connected to peer from " + ip          
@@ -311,13 +334,14 @@ class Peer
       rescue
       end       
     end
+    if @leader_id == nil
+      puts "Não foi possível encontrar o líder"
+      exit(1)
+    end
     puts "End finding connections"
   end
 
   def leader_election
-  end
-
-  def heartbeat
   end
 
   def ipscan
