@@ -72,14 +72,14 @@ class Peer
       # caso em que é a primeira vez que o peer se conecta
       if @peers[socket.peeraddr[3]] == nil  
         puts "He just connected to the network"
-        @peer_mutex.synchronize {
+        @mutex.synchronize {
           @peers[socket.peeraddr[3]] = Hash.new
           @peers[socket.peeraddr[3]][:status] = "connected"
         }
       # caso a conexão do peer tenha caido anteriormente
       elsif @peers[socket.peeraddr[3]][:status] == "lost"        
           puts socket.peeraddr[3] + "reconnected to the network"
-        @peer_mutex.synchronize {
+        @mutex.synchronize {
           @peers[socket.peeraddr[3]][:status] = "reconnected"
         }
       end
@@ -99,9 +99,7 @@ class Peer
           @mutex.synchronize {
           #se o peer realmente terminou o trabalho ou é a primeira vez que ele se conecta
           if @peers[socket.peeraddr[3]][:low] == false || @peers[socket.peeraddr[3]][:low] == nil    
-              @peer_mutex.synchronize {
-                @peers[socket.peeraddr[3]][:low], @peers[socket.peeraddr[3]][:high] = select_interval()
-              } 
+                @peers[socket.peeraddr[3]][:low], @peers[socket.peeraddr[3]][:high] = select_interval() 
               if @peers[socket.peeraddr[3]][:low] == false
                 response = "no_interval"
               else
@@ -121,7 +119,7 @@ class Peer
         when "ping"
           response = "pong"
         when "finish_interval_computation"
-          @peer_mutex.synchronize {
+          @mutex.synchronize {
             @peers[socket.peeraddr[3]][:low] = @peers[socket.peeraddr[3]][:high] = false
           }
           response = "ok"
@@ -172,7 +170,7 @@ class Peer
 
   def check_end
     if @remaining_interval[:low] >= @remaining_interval[:high] && @interval_queue.empty?
-      @peer_mutex.synchronize {
+      @mutex.synchronize {
       @peers.each_key do |id| 
         if (@peers[id][:low] != false && @peers[id][:high] != false)
           puts "teste pendente: " + @peers[id][:low].to_s + ", " + @peers[id][:high].to_s
@@ -251,7 +249,7 @@ class Peer
   end
 
   def heartbeat
-    @peer_mutex.synchronize {
+    @mutex.synchronize {
     @peers.each_key do |id|
       socket = try_connect(id)
       if socket == false
