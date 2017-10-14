@@ -12,7 +12,8 @@ caso contrário: no_interval
 
 Request de qualquer peer qualquer peer
 request: peer_info check
-response: x,y(current computation)
+response se tiver: x,y(current computation) 
+caso contrário: no_interval 
 
 request: leader? check
 response: yes|no
@@ -23,8 +24,14 @@ response: pong
 broadcast: finish_interval_computation x,y => nesse caso exclui o intervalo da lista de pendencias 
 response: ok
 
-broadcast: not_prime i (number which divides n)
+broadcast: is_prime
+response: ok
+
+broadcast: not_prime i (number which divides n) check
 response: ok
 
 Por enquanto o líder deve guardar o intervalo que cada peer ta computando, se o peer se desconectar ele bota isso na fila de intervalo
 cada quantum tem tamanho 10000
+
+funções handle_response?
+funções handle_request?
