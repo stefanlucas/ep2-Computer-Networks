@@ -2,7 +2,7 @@ require 'socket'
 require 'ipaddr'
 require 'thread'
 
-Thread.abort_on_exception=true
+Thread.abort_on_exception=true #tirar isso depois
 class Peer
   def initialize(port, number = nil)
     @server = TCPServer.open(port)
@@ -66,6 +66,7 @@ class Peer
 
   def handle(socket)
     Thread.new {
+      begin
       message = socket.gets
       puts "Peer " + socket.peeraddr[3].to_s + " request: " + message
       message = message.split(/[ \r\n]/)
@@ -137,6 +138,8 @@ class Peer
         puts "response: " + response
         socket.puts response
       socket.close
+    rescue
+    end
     }
   end
 
@@ -172,16 +175,21 @@ class Peer
     if @remaining_interval[:low] >= @remaining_interval[:high] && @interval_queue.empty?
       @mutex.synchronize {
       @peers.each_key do |id| 
-        if (@peers[id][:low] != false && @peers[id][:high] != false)
+        if (@peers[id][:low] != false && @peers[id][:low] != nil)
           puts "teste pendente: " + @peers[id][:low].to_s + ", " + @peers[id][:high].to_s
           socket = try_connect(id)
+          if socket != false
+            begin
+              socket.puts "ping"
+              socket.gets
+            rescue
+              socket = false
+            end
+          end
           if socket == false
             puts "maquina " + id + " caiu, colocando intervalo na fila de pendentes"
             @interval_queue.push({low: @peers[id][:low], high: @peers[id][:high]})
             @peers[id][:low] = @peers[id][:high] = false
-          else
-            socket.puts "ping"
-            socket.gets
           end
           return @prime = false
         end
@@ -252,6 +260,14 @@ class Peer
     @mutex.synchronize {
     @peers.each_key do |id|
       socket = try_connect(id)
+      if socket != false
+        begin
+          socket.puts "ping"
+          socket.gets
+        rescue
+          socket = false
+        end
+      end
       if socket == false
         @peers[id][:status] = "lost"
         puts "maquina " + id + " caiu, colocando intervalo na fila de pendentes"
@@ -261,9 +277,6 @@ class Peer
           }
           @peers[id][:low] = @peers[id][:high] = false 
         end
-      else
-        socket.puts "ping"
-        socket.gets
       end  
     end
     }
