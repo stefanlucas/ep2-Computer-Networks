@@ -238,7 +238,7 @@ class Peer
   def heartbeat
     @peers.each_key do |id|
       socket = try_connect(id)
-      if socket == false)
+      if socket == false
         @peers[id][:status] = "lost"
         puts "maquina " + id + " caiu, colocando intervalo na fila de pendentes"
         if @peers[id][:low] != false && @peers[id][:high] != false
