@@ -14,10 +14,12 @@ class Peer
     @remaining_interval = Hash.new
     @peers = Hash.new
     @id = nil
-    @mutex = Mutex.new
     @quantum = 10000000
     @leader = false
     @leader_id = nil
+
+    @mutex = Mutex.new
+    @peer_mutex = Mutex.new
 
     Socket.ip_address_list.each do |addr_info|
       if (addr_info.ip_address =~ /192.168.1.*/) == 0
@@ -65,15 +67,19 @@ class Peer
   def handle(socket)
     Thread.new {
       message = socket.gets
-      puts "Peer " + socket.peeraddr[3] + " request: " + message
+      puts "Peer " + socket.peeraddr[3].to_s + " request: " + message
       message = message.split(/[ \r\n]/)
-      if @peers[socket.peeraddr[3]] == nil # caso em que é a primeira vez que o peer se conecta à rede 
+      if @leader and @peers[socket.peeraddr[3]] == nil # caso em que é a primeira vez que o peer se conecta à rede 
         puts "He just connected to the network"
-        @peers[socket.peeraddr[3]] = Hash.new
-        @peers[socket.peeraddr[3]][:status] = "connected"
-      elsif @peers[socket.peeraddr[3]][:status] == "lost" # caso a conexão do peer tenha caido anteriormente
-        puts socket.peeraddr[3] + "reconnected to the network"
-        @peers[socket.peeraddr[3]][:status] = "reconnected"
+        @peer_mutex.synchronize {
+          @peers[socket.peeraddr[3]] = Hash.new
+          @peers[socket.peeraddr[3]][:status] = "connected"
+        }
+      elsif @leader and @peers[socket.peeraddr[3]][:status] == "lost" # caso a conexão do peer tenha caido anteriormente
+        @peer_mutex.synchronize {
+          puts socket.peeraddr[3] + "reconnected to the network"
+          @peers[socket.peeraddr[3]][:status] = "reconnected"
+        }
       end
       case message[0]
         when "leader?"
@@ -90,10 +96,12 @@ class Peer
         when "new_interval"
           @mutex.synchronize {
           if @peers[socket.peeraddr[3]][:low] == false || @peers[socket.peeraddr[3]][:low] == nil #se o peer realmente terminou o trabalho ou é a primeira vez que ele entra   
-            @peers[socket.peeraddr[3]][:low], @peers[socket.peeraddr[3]][:high] = select_interval()
-            if @peers[socket.peeraddr[3]][:low] == false
-              response = "no_interval"
-            else
+            @peer_mutex.synchronize {
+              @peers[socket.peeraddr[3]][:low], @peers[socket.peeraddr[3]][:high] = select_interval()
+            } 
+              if @peers[socket.peeraddr[3]][:low] == false
+                response = "no_interval"
+              else
               response = @peers[socket.peeraddr[3]][:low].to_s + "," + @peers[socket.peeraddr[3]][:high].to_s
             end         
           else #caso o peer tenha se desconectado anteriormente sem terminar o trabalho
@@ -110,7 +118,9 @@ class Peer
           response = "pong"
         when "finish_interval_computation"
           @peers[socket.peeraddr[3]] = Hash.new
-          @peers[socket.peeraddr[3]][:low] = @peers[socket.peeraddr[3]][:high] = false
+          @peer_mutex.synchronize {
+            @peers[socket.peeraddr[3]][:low] = @peers[socket.peeraddr[3]][:high] = false
+          }
           response = "ok"
         when "is_prime"
           puts @number.to_s + " é primo"
@@ -159,6 +169,7 @@ class Peer
 
   def check_end
     if @remaining_interval[:low] >= @remaining_interval[:high] && @interval_queue.empty?
+      @peer_mutex.synchronize {
       @peers.each_key do |id| 
         if (@peers[id][:low] != false && @peers[id][:high] != false)
           puts "teste pendente: " + @peers[id][:low].to_s + ", " + @peers[id][:high].to_s
@@ -174,6 +185,7 @@ class Peer
           return @prime = false
         end
       end
+      }
       return @prime = true
     end
     return @prime = false
@@ -241,7 +253,7 @@ class Peer
       if socket == false
         @peers[id][:status] = "lost"
         puts "maquina " + id + " caiu, colocando intervalo na fila de pendentes"
-        if @peers[id][:low] != false && @peers[id][:high] != false
+        if @peers[id][:low] != false and @peers[id][:low] != nil
           @mutex.synchronize {
             @interval_queue << {low: @peers[id][:low], high: @peers[id][:high]}
           }
