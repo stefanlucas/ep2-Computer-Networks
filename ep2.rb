@@ -69,15 +69,17 @@ class Peer
       message = socket.gets
       puts "Peer " + socket.peeraddr[3].to_s + " request: " + message
       message = message.split(/[ \r\n]/)
-      if @leader and @peers[socket.peeraddr[3]] == nil # caso em que é a primeira vez que o peer se conecta à rede 
+      # caso em que é a primeira vez que o peer se conecta
+      if @peers[socket.peeraddr[3]] == nil  
         puts "He just connected to the network"
         @peer_mutex.synchronize {
           @peers[socket.peeraddr[3]] = Hash.new
           @peers[socket.peeraddr[3]][:status] = "connected"
         }
-      elsif @leader and @peers[socket.peeraddr[3]][:status] == "lost" # caso a conexão do peer tenha caido anteriormente
-        @peer_mutex.synchronize {
+      # caso a conexão do peer tenha caido anteriormente
+      elsif @peers[socket.peeraddr[3]][:status] == "lost"        
           puts socket.peeraddr[3] + "reconnected to the network"
+        @peer_mutex.synchronize {
           @peers[socket.peeraddr[3]][:status] = "reconnected"
         }
       end
@@ -95,16 +97,18 @@ class Peer
           end
         when "new_interval"
           @mutex.synchronize {
-          if @peers[socket.peeraddr[3]][:low] == false || @peers[socket.peeraddr[3]][:low] == nil #se o peer realmente terminou o trabalho ou é a primeira vez que ele entra   
-            @peer_mutex.synchronize {
-              @peers[socket.peeraddr[3]][:low], @peers[socket.peeraddr[3]][:high] = select_interval()
-            } 
+          #se o peer realmente terminou o trabalho ou é a primeira vez que ele se conecta
+          if @peers[socket.peeraddr[3]][:low] == false || @peers[socket.peeraddr[3]][:low] == nil    
+              @peer_mutex.synchronize {
+                @peers[socket.peeraddr[3]][:low], @peers[socket.peeraddr[3]][:high] = select_interval()
+              } 
               if @peers[socket.peeraddr[3]][:low] == false
                 response = "no_interval"
               else
               response = @peers[socket.peeraddr[3]][:low].to_s + "," + @peers[socket.peeraddr[3]][:high].to_s
             end         
-          else #caso o peer tenha se desconectado anteriormente sem terminar o trabalho
+          #caso o peer tenha se desconectado anteriormente sem terminar o trabalho
+          else 
             response = @peers[socket.peeraddr[3]][:low].to_s + "," + @peers[socket.peeraddr[3]][:high].to_s
           end 
           }                       
@@ -117,7 +121,6 @@ class Peer
         when "ping"
           response = "pong"
         when "finish_interval_computation"
-          @peers[socket.peeraddr[3]] = Hash.new
           @peer_mutex.synchronize {
             @peers[socket.peeraddr[3]][:low] = @peers[socket.peeraddr[3]][:high] = false
           }
@@ -248,6 +251,7 @@ class Peer
   end
 
   def heartbeat
+    @peer_mutex.synchronize {
     @peers.each_key do |id|
       socket = try_connect(id)
       if socket == false
@@ -264,21 +268,24 @@ class Peer
         socket.gets
       end  
     end
+    }
   end
 
   def broadcast(message)
-    @peers.each_key do |id|
-      begin
-        if message == "is_prime" || message == "not_prime"
-          puts "transmitindo mensagem de fim para o peer " + id
+    @peer_mutex.synchronize {
+      @peers.each_key do |id|
+        begin
+          if message == "is_prime" || message == "not_prime"
+            puts "transmitindo mensagem de fim para o peer " + id
+          end
+          socket = TCPSocket.open(id, @port)
+          socket.puts message
+          socket.gets 
+        rescue
+          next
         end
-        socket = TCPSocket.open(id, @port)
-        socket.puts message
-        socket.gets 
-      rescue
-        next
       end
-    end
+    }
   end
 
   def connect_peers
