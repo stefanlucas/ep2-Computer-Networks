@@ -158,7 +158,7 @@ class Peer
     tr = Thread.new {
       loop {
         puts "testing interval " + @interval[:low].to_s + "," + @interval[:high].to_s
-        if @interval[:low] != false and @interval[:low] != false and @interval[:low] != nil and @interval[:high] != nil
+        if @interval[:low] != false and @interval[:low] != nil and @interval[:low] != 0
           i = @interval[:low]
           while i <= @interval[:high] do
             if @number % i == 0
@@ -237,7 +237,7 @@ class Peer
     end
     return @prime = false
   end
-  
+
   def heartbeat
     @peers_mutex.synchronize {
     @peers.each_key do |id|
