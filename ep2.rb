@@ -5,7 +5,7 @@ require 'time'
 
 Thread.abort_on_exception=true #tirar isso depois
 class Peer
-  def initialize(port, number = nil)
+  def initialize(port, number = nil, quantum=10000000)
     @server = TCPServer.open(port)
     @port = port
     @number = number
@@ -15,20 +15,23 @@ class Peer
     @remaining_interval = Hash.new
     @peers = Hash.new
     @id = nil
-    @quantum = 10000000
     @leader = false
     @leader_id = nil
+    @quantum = quantum
+    @debug = true
     @t = Time.new
-
+    @filename = "log.txt"
     @peers_mutex = Mutex.new
 
     Socket.ip_address_list.each do |addr_info|
-      if (addr_info.ip_address =~ /192.168.1.*/) == 0
+      if (addr_info.ip_address =~ /192.168.*.*/) == 0
         @id = addr_info.ip_address
+        digits = addr_info.ip_address.split(".")
+        @ip_digit = digits[2]
       end 
     end
     if @id == nil
-      puts "Erro, deveria existir uma interface lan com ip 192.168.1.*"
+      puts "Erro, deveria existir uma interface lan com ip do tipo 192.168.*.*"
       exit(1)
     end
     if number != nil
@@ -430,7 +433,7 @@ class Peer
   end
 
   def ipscan
-    ips = IPAddr.new("192.168.1.0/24").to_range
+    ips = IPAddr.new("192.168." + @ip_digit + ".0/24").to_range
     ip_array = []
     threads = ips.map do |ip|
       Thread.new do

@@ -1,0 +1,12 @@
+
+ruby ep2.rb 
+ruby ep2.rb debug
+
+ruby ep2.rb numero 
+ruby ep2.rb numero quantum
+ruby ep2.rb numero debug 
+ruby ep2.rb numero debug quantum
+
+Obs: O quantum deve ser colocados apenas primeiro código a ser executado
+
+
