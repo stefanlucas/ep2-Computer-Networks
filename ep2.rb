@@ -17,6 +17,7 @@ class Peer
     @quantum = 10000000
     @leader = false
     @leader_id = nil
+    @t = Time.new
 
     @peers_mutex = Mutex.new
 
@@ -64,7 +65,8 @@ class Peer
   end
 
   def handle(socket)
-    Thread.new {
+    Thread.new { 
+      begin
       message = socket.gets
       puts "Peer " + socket.peeraddr[3].to_s + " request: " + message
       message = message.split(/[ \r\n]/)
@@ -78,7 +80,7 @@ class Peer
       # caso a conexão do peer tenha caido anteriormente
       elsif @peers[socket.peeraddr[3]][:status] == "lost"        
         puts socket.peeraddr[3] + "reconnected to the network"
-        @peers[socket.peeraddr[3]][:status] = "reconnected"
+        @peers[socket.peeraddr[3]][:status] = "connected"
       end
       case message[0]
         when "leader?"
@@ -87,6 +89,24 @@ class Peer
           else
             response = "no"
           end
+        when "leader_election"
+          response = socket.gets.split(/[ \r\n]/)
+          if response[0] == "you_were_elected"
+            @leader = true
+            @leader_id = @id
+            x, y = response[1].split(",")
+            @remaining_interval[:low], @remaining_interval[:high] = x.to_i, y.to_i
+            @interval_queue = []
+            for i in 2..(response.size - 1) 
+              low, high = response[i].split(",")
+              @interval_queue << {low: low.to_i, high: high.to_i}
+            end
+          else
+            @leader = false
+            response = socket.gets.split(/[ \r\n]/)
+            @leader_id = response[1]
+          end
+          @t = Time.now
         when "get_computation_info"
           response = @number.to_s + " " + @remaining_interval[:low].to_s + "," + @remaining_interval[:high].to_s
           @interval_queue.each do |interval|
@@ -127,9 +147,11 @@ class Peer
         else
           response = "Unknow command"
         end
-        puts "response: " + response
+        puts "response: " + response.to_s
         socket.puts response
       socket.close
+      rescue
+      end
     }
   end
 
@@ -199,9 +221,58 @@ class Peer
             @interval[:low], @interval[:high] = response[0].to_i, response[1].to_i          
           end
         end
+        if @leader 
+          puts "OI EU SOU O LIDER"
+        end
+        if @leader and Time.now - @t > 10
+          puts "VAI ROLAR ELEIÇÃO SEUS FILHO DA PUTA"
+          leader_election
+          @t = Time.now
+        end    
       }
     }
   end
+
+  def leader_election
+    @peers_mutex.synchronize {
+      array = [[@id, nil]]
+      @peers.each_key do |id|
+        if @peers[id][:status] == "connected"
+          begin
+            socket = TCPSocket.open(id, @port)
+            socket.puts "leader_election"
+            array.push([id, socket]) 
+          rescue
+            next
+          end
+        end
+      end
+      elected_leader = rand(array.length)
+      puts "NUMERO ALEATORIO GERADOOOOOOOOOOOOOOOOO: " + elected_leader.to_s
+      puts "TAMANHUUUUUUUU DU ARRAYYYYYYYYYYYY: " + array.length.to_s
+      if array[elected_leader][0] == @id
+        @leader = true
+      else
+        @leader = false
+      end
+      @leader_id = array[elected_leader][0]
+      array.each do |x|
+        socket = x[1]
+        if @id != x[0]
+          if @leader_id == x[0]
+            response = "you_were_elected " + @remaining_interval[:low].to_s + "," + @remaining_interval[:high].to_s
+            @interval_queue.each do |interval|
+              response += " " + interval[:low].to_s + "," + interval[:high].to_s
+            end
+            socket.puts response
+          else
+            socket.puts "leader_is " + @leader_id
+          end
+        end
+      end
+    }
+  end
+
   def try_connect(id)
     begin 
       return TCPSocket.open(id, @port)
@@ -212,8 +283,9 @@ class Peer
 
   def check_end
     if @remaining_interval[:low] >= @remaining_interval[:high] && @interval_queue.empty?
+      @peers_mutex.synchronize {
       @peers.each_key do |id| 
-        if (@peers[id][:low] != false && @peers[id][:low] != nil)
+        if (@peers[id][:low] != false && @peers[id][:low] != nil && @peers[id][:low] != 0)
           puts "teste pendente: " + @peers[id][:low].to_s + ", " + @peers[id][:high].to_s
           socket = try_connect(id)
           if socket != false
@@ -233,6 +305,7 @@ class Peer
           return @prime = false
         end
       end
+      }
       return @prime = true
     end
     return @prime = false
@@ -240,25 +313,16 @@ class Peer
 
   def heartbeat
     @peers_mutex.synchronize {
-    @peers.each_key do |id|
-      socket = try_connect(id)
-      if socket != false
+      @peers.each_key do |id|
+        socket = try_connect(id)
         begin
           socket.puts "ping"
           socket.gets
         rescue
-          socket = false
-        end
-      end
-      if socket == false
-        @peers[id][:status] = "lost"
-        puts "maquina " + id + " caiu, colocando intervalo na fila de pendentes"
-        if @peers[id][:low] != false and @peers[id][:low] != nil
-          @interval_queue << {low: @peers[id][:low], high: @peers[id][:high]}
-          @peers[id][:low] = @peers[id][:high] = false 
+          @peers[id][:status] = "lost"
+          next
         end
       end  
-    end
     }
   end
 
@@ -328,6 +392,7 @@ class Peer
           end
         end
         @peers[ip] = Hash.new
+        @peers[ip][:status] = "connected"
         socket = TCPSocket.open(ip, @port)
         puts "Requesting peer interval"
         socket.puts "peer_interval"
@@ -349,9 +414,6 @@ class Peer
       exit(1)
     end
     puts "End finding connections"
-  end
-
-  def leader_election
   end
 
   def ipscan
