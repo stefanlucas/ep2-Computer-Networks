@@ -9,3 +9,17 @@ Starting leader electiontimestamp: 2017-10-15 21:01:11 -0200
 Starting leader electiontimestamp: 2017-10-15 21:01:22 -0200
 Starting leader electiontimestamp: 2017-10-15 21:06:39 -0200
 Starting leader electiontimestamp: 2017-10-15 21:06:50 -0200
+Starting leader electiontimestamp: 2017-10-15 21:21:03 -0200
+Election finished, I'm the leadertimestamp: 2017-10-15 21:21:03 -0200
+Peer192.168.1.107 connectedtimestamp: 2017-10-15 21:21:11 -0200
+Starting leader electiontimestamp: 2017-10-15 21:21:14 -0200
+Election finished, I'm the leadertimestamp: 2017-10-15 21:21:14 -0200
+Starting leader electiontimestamp: 2017-10-15 21:21:25 -0200
+Election finished, I'm the leadertimestamp: 2017-10-15 21:21:25 -0200
+Starting leader electiontimestamp: 2017-10-15 21:21:36 -0200
+Election finished, I'm the leadertimestamp: 2017-10-15 21:21:36 -0200
+Starting leader electiontimestamp: 2017-10-15 21:21:47 -0200
+Election finished, I'm the leadertimestamp: 2017-10-15 21:21:47 -0200
+Starting leader electiontimestamp: 2017-10-15 21:21:58 -0200
+Election finished, I'm the leadertimestamp: 2017-10-15 21:21:58 -0200
+Starting leader electiontimestamp: 2017-10-15 21:22:09 -0200

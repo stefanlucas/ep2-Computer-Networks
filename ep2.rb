@@ -73,7 +73,7 @@ class Peer
   def write_log(line) 
     File.open(@filename, 'a') { |f| 
       f.flock(File::LOCK_EX)
-      f.puts line + "timestamp: " + Time.new.to_s
+      f.puts line + " timestamp: " + Time.new.to_s
     }
   end
 
@@ -105,7 +105,7 @@ class Peer
             response = "no"
           end
         when "leader_election"
-          write_log "Peer" + socket.peeraddr[3] + " initiated the election" 
+          write_log "Peer " + socket.peeraddr[3] + " initiated the election" 
           response = socket.gets.split(/[ \r\n]/)
           if response[0] == "you_were_elected"
             write_log "I was elected as the leader"
@@ -222,7 +222,7 @@ class Peer
         end
         if @leader
           if check_end() == true
-            wirte_log  "Broadcasting: " + @number.to_s + " is prime"
+            write_log  "Broadcasting: " + @number.to_s + " is prime"
             broadcast("is_prime")
             puts "O número é primo"
             exit(0)
@@ -297,7 +297,7 @@ class Peer
           pendent_interval.each do |interval|
             response += " " + interval[:low].to_s + "," + interval[:high].to_s
           end
-          socket.puts response
+          socket.puts Response
         else
           socket.puts "leader_is " + @leader_id
         end
