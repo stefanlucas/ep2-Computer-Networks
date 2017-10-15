@@ -18,7 +18,7 @@ class Peer
     @leader = false
     @leader_id = nil
 
-    @mutex = Mutex.new
+    @peers_mutex = Mutex.new
 
     Socket.ip_address_list.each do |addr_info|
       if (addr_info.ip_address =~ /192.168.1.*/) == 0
@@ -65,23 +65,20 @@ class Peer
 
   def handle(socket)
     Thread.new {
-      begin
       message = socket.gets
       puts "Peer " + socket.peeraddr[3].to_s + " request: " + message
       message = message.split(/[ \r\n]/)
       # caso em que é a primeira vez que o peer se conecta
       if @peers[socket.peeraddr[3]] == nil  
         puts "He just connected to the network"
-        @mutex.synchronize {
+        @peers_mutex.synchronize {
           @peers[socket.peeraddr[3]] = Hash.new
-          @peers[socket.peeraddr[3]][:status] = "connected"
         }
+        @peers[socket.peeraddr[3]][:status] = "connected"
       # caso a conexão do peer tenha caido anteriormente
       elsif @peers[socket.peeraddr[3]][:status] == "lost"        
-          puts socket.peeraddr[3] + "reconnected to the network"
-        @mutex.synchronize {
-          @peers[socket.peeraddr[3]][:status] = "reconnected"
-        }
+        puts socket.peeraddr[3] + "reconnected to the network"
+        @peers[socket.peeraddr[3]][:status] = "reconnected"
       end
       case message[0]
         when "leader?"
@@ -96,22 +93,20 @@ class Peer
             response += " " + interval[:low].to_s + "," + interval[:high].to_s
           end
         when "new_interval"
-          @mutex.synchronize {
           #se o peer realmente terminou o trabalho ou é a primeira vez que ele se conecta
           if @peers[socket.peeraddr[3]][:low] == false || @peers[socket.peeraddr[3]][:low] == nil    
-                @peers[socket.peeraddr[3]][:low], @peers[socket.peeraddr[3]][:high] = select_interval() 
+              @peers[socket.peeraddr[3]][:low], @peers[socket.peeraddr[3]][:high] = select_interval() 
               if @peers[socket.peeraddr[3]][:low] == false
                 response = "no_interval"
               else
               response = @peers[socket.peeraddr[3]][:low].to_s + "," + @peers[socket.peeraddr[3]][:high].to_s
             end         
-          #caso o peer tenha se desconectado anteriormente sem terminar o trabalho
           else 
+            #caso o peer tinha se desconectado anteriormente sem terminar o trabalho e não deu tempo do líder perceber
             response = @peers[socket.peeraddr[3]][:low].to_s + "," + @peers[socket.peeraddr[3]][:high].to_s
           end 
-          }                       
         when "peer_interval"
-          if @interval[:low] == false
+          if @interval[:low] == false || @interval[:low] == nil
             response = "no_interval"
           else
             response = @interval[:low].to_s + "," + @interval[:high].to_s
@@ -119,9 +114,7 @@ class Peer
         when "ping"
           response = "pong"
         when "finish_interval_computation"
-          @mutex.synchronize {
-            @peers[socket.peeraddr[3]][:low] = @peers[socket.peeraddr[3]][:high] = false
-          }
+          @peers[socket.peeraddr[3]][:low] = @peers[socket.peeraddr[3]][:high] = false
           response = "ok"
         when "is_prime"
           puts @number.to_s + " é primo"
@@ -137,8 +130,6 @@ class Peer
         puts "response: " + response
         socket.puts response
       socket.close
-    rescue
-    end
     }
   end
 
@@ -162,6 +153,55 @@ class Peer
     return [low, high]
   end
 
+
+  def primality_test
+    tr = Thread.new {
+      loop {
+        puts "testing interval " + @interval[:low].to_s + "," + @interval[:high].to_s
+        if @interval[:low] != false and @interval[:low] != false and @interval[:low] != nil and @interval[:high] != nil
+          i = @interval[:low]
+          while i <= @interval[:high] do
+            if @number % i == 0
+              puts "Não é primo " + i.to_s + " divide " + @number.to_s
+              message = "not_prime" + " " + i.to_s
+              broadcast(message)
+              exit(0)
+            end
+            i += 1
+          end
+          message = "finish_interval_computation" + " " + @interval[:low].to_s + "," + @interval[:high].to_s
+          broadcast(message)
+        end
+        if @leader
+          if check_end() == true
+            broadcast("is_prime")
+            puts "O número é primo"
+            exit(0)
+          end 
+          @interval[:low], @interval[:high] = select_interval()
+          if @interval[:low] == false || @interval[:high] == false
+            sleep(0.1)
+          end
+        else
+          conn_failed = false
+          begin 
+            socket = TCPSocket.open(@leader_id, @port)
+            socket.puts "new_interval"
+            response = socket.gets.chomp
+          rescue
+            conn_failed = true
+          end
+          if conn_failed || response == "no_interval"
+            sleep(0.1)
+            @interval[:low] = @interval[:high] = false
+          else
+            response = response.split(",")
+            @interval[:low], @interval[:high] = response[0].to_i, response[1].to_i          
+          end
+        end
+      }
+    }
+  end
   def try_connect(id)
     begin 
       return TCPSocket.open(id, @port)
@@ -172,7 +212,6 @@ class Peer
 
   def check_end
     if @remaining_interval[:low] >= @remaining_interval[:high] && @interval_queue.empty?
-      @mutex.synchronize {
       @peers.each_key do |id| 
         if (@peers[id][:low] != false && @peers[id][:low] != nil)
           puts "teste pendente: " + @peers[id][:low].to_s + ", " + @peers[id][:high].to_s
@@ -189,79 +228,18 @@ class Peer
             puts "maquina " + id + " caiu, colocando intervalo na fila de pendentes"
             @interval_queue.push({low: @peers[id][:low], high: @peers[id][:high]})
             @peers[id][:low] = @peers[id][:high] = false
+            @peers[id][:status] = "lost"
           end
           return @prime = false
         end
       end
-      }
       return @prime = true
     end
     return @prime = false
   end
-
-  def primality_test
-    tr = Thread.new {
-      loop {
-        puts "testing interval " + @interval[:low].to_s + "," + @interval[:high].to_s
-        if @interval[:low] != false and @interval[:low] != false and @interval[:low] != nil and @interval[:high] != nil
-          i = @interval[:low]
-          while i <= @interval[:high] do
-            if @number % i == 0
-              puts "Não é primo " + i.to_s + " divide " + @number.to_s
-              message = "not_prime" + " " + i.to_s
-              @mutex.synchronize {
-                broadcast(message)
-              }
-              exit(0)
-            end
-            i += 1
-          end
-          message = "finish_interval_computation" + " " + @interval[:low].to_s + "," + @interval[:high].to_s
-          @mutex.synchronize {
-            broadcast(message)
-          }
-        end
-        if @leader
-          if check_end() == true
-            @mutex.synchronize {
-              broadcast("is_prime")
-            }
-            puts "O número é primo"
-            exit(0)
-          end 
-          @mutex.synchronize {
-            @interval[:low], @interval[:high] = select_interval()
-          } 
-          if @interval[:low] == false || @interval[:high] == false
-            sleep(0.1)
-          end
-        else
-          conn_failed = false
-          begin 
-            socket = TCPSocket.open(@leader_id, @port)
-            socket.puts "new_interval"
-            response = socket.gets.chomp
-          rescue
-            conn_failed = true
-          end
-          if conn_failed || response == "no_interval"
-            sleep(0.1)
-            @mutex.synchronize {
-              @interval[:low] = @interval[:high] = false
-            }
-          else
-            @mutex.synchronize {
-              response = response.split(",")
-              @interval[:low], @interval[:high] = response[0].to_i, response[1].to_i
-            }          
-          end
-
-        end
-      }
-    }
-  end
-
+  
   def heartbeat
+    @peers_mutex.synchronize {
     @peers.each_key do |id|
       socket = try_connect(id)
       if socket != false
@@ -281,9 +259,11 @@ class Peer
         end
       end  
     end
+    }
   end
 
   def broadcast(message)
+    @peers_mutex.synchronize {
       @peers.each_key do |id|
         begin
           if message == "is_prime" || message == "not_prime"
@@ -296,6 +276,7 @@ class Peer
           next
         end
       end
+    }
   end
 
   def connect_peers
