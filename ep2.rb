@@ -1,6 +1,7 @@
 require 'socket'
 require 'ipaddr'
 require 'thread'
+require 'time'
 
 Thread.abort_on_exception=true #tirar isso depois
 class Peer
@@ -59,6 +60,7 @@ class Peer
 
   def run
     primality_test
+    heartbeat
     loop {
       handle(@server.accept) 
     }
@@ -78,7 +80,7 @@ class Peer
         }
         @peers[socket.peeraddr[3]][:status] = "connected"
       # caso a conexão do peer tenha caido anteriormente
-      elsif @peers[socket.peeraddr[3]][:status] == "lost"        
+      elsif @peers[socket.peeraddr[3]][:status] == "disconnected"        
         puts socket.peeraddr[3] + "reconnected to the network"
         @peers[socket.peeraddr[3]][:status] = "connected"
       end
@@ -178,6 +180,7 @@ class Peer
 
   def primality_test
     tr = Thread.new {
+      time_heartbeat = Time.new
       loop {
         puts "testing interval " + @interval[:low].to_s + "," + @interval[:high].to_s
         if @interval[:low] != false and @interval[:low] != nil and @interval[:low] != 0
@@ -193,6 +196,10 @@ class Peer
           end
           message = "finish_interval_computation" + " " + @interval[:low].to_s + "," + @interval[:high].to_s
           broadcast(message)
+        end
+        if Time.new - time_heartbeat > 120
+          heartbeat
+          time_heartbeat = Time.new
         end
         if @leader
           if check_end() == true
@@ -234,43 +241,48 @@ class Peer
   end
 
   def leader_election
+    array = [[@id, nil]]
+    pendent_interval = []
     @peers_mutex.synchronize {
-      array = [[@id, nil]]
       @peers.each_key do |id|
-        if @peers[id][:status] == "connected"
-          begin
-            socket = TCPSocket.open(id, @port)
-            socket.puts "leader_election"
-            array.push([id, socket]) 
-          rescue
-            next
-          end
-        end
-      end
-      elected_leader = rand(array.length)
-      puts "NUMERO ALEATORIO GERADOOOOOOOOOOOOOOOOO: " + elected_leader.to_s
-      puts "TAMANHUUUUUUUU DU ARRAYYYYYYYYYYYY: " + array.length.to_s
-      if array[elected_leader][0] == @id
-        @leader = true
-      else
-        @leader = false
-      end
-      @leader_id = array[elected_leader][0]
-      array.each do |x|
-        socket = x[1]
-        if @id != x[0]
-          if @leader_id == x[0]
-            response = "you_were_elected " + @remaining_interval[:low].to_s + "," + @remaining_interval[:high].to_s
-            @interval_queue.each do |interval|
-              response += " " + interval[:low].to_s + "," + interval[:high].to_s
-            end
-            socket.puts response
-          else
-            socket.puts "leader_is " + @leader_id
+        begin
+          socket = TCPSocket.open(id, @port)
+          socket.puts "leader_election"
+          array.push([id, socket]) 
+        rescue
+          @peers[id][:status] = "disconnected"
+          if @peers[id][:low] != false and @peers[id][:low] != nil and @peers[id][:high] != 0
+            pendent_interval.push({low: @peers[id][:low], high: @peers[id][:high]})
           end
         end
       end
     }
+    elected_leader = rand(array.length)
+    puts "NUMERO ALEATORIO GERADOOOOOOOOOOOOOOOOO: " + elected_leader.to_s
+    puts "TAMANHUUUUUUUU DU ARRAYYYYYYYYYYYY: " + array.length.to_s
+    if array[elected_leader][0] == @id
+      @leader = true
+    else
+      @leader = false
+    end
+    @leader_id = array[elected_leader][0]
+    array.each do |x|
+      socket = x[1]
+      if @id != x[0]
+        if @leader_id == x[0]
+          response = "you_were_elected " + @remaining_interval[:low].to_s + "," + @remaining_interval[:high].to_s
+          @interval_queue.each do |interval|
+            response += " " + interval[:low].to_s + "," + interval[:high].to_s
+          end
+          pendent_interval.each do |interval|
+            response += " " + interval[:low].to_s + "," + interval[:high].to_s
+          end
+          socket.puts response
+        else
+          socket.puts "leader_is " + @leader_id
+        end
+      end
+    end
   end
 
   def try_connect(id)
@@ -300,7 +312,7 @@ class Peer
             puts "maquina " + id + " caiu, colocando intervalo na fila de pendentes"
             @interval_queue.push({low: @peers[id][:low], high: @peers[id][:high]})
             @peers[id][:low] = @peers[id][:high] = false
-            @peers[id][:status] = "lost"
+            @peers[id][:status] = "disconnected"
           end
           return @prime = false
         end
@@ -319,7 +331,8 @@ class Peer
           socket.puts "ping"
           socket.gets
         rescue
-          @peers[id][:status] = "lost"
+          puts "Peer " + id + " desconectado"
+          @peers[id][:status] = "disconnected"
           next
         end
       end  
