@@ -23,3 +23,5 @@ Election finished, I'm the leadertimestamp: 2017-10-15 21:21:47 -0200
 Starting leader electiontimestamp: 2017-10-15 21:21:58 -0200
 Election finished, I'm the leadertimestamp: 2017-10-15 21:21:58 -0200
 Starting leader electiontimestamp: 2017-10-15 21:22:09 -0200
+Peer192.168.1.107 connected timestamp: 2017-10-15 21:34:01 -0200
+Starting leader election timestamp: 2017-10-15 21:34:04 -0200

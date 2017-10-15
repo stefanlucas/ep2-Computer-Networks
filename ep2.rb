@@ -297,7 +297,7 @@ class Peer
           pendent_interval.each do |interval|
             response += " " + interval[:low].to_s + "," + interval[:high].to_s
           end
-          socket.puts Response
+          socket.puts response
         else
           socket.puts "leader_is " + @leader_id
         end
