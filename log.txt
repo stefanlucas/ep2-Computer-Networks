@@ -1,0 +1,11 @@
+192.168.1.107 connected
+192.168.1.107 connected
+Starting leader electiontimestamp: 2017-10-15 21:00:28 -0200
+Peer192.168.1.107 connectedtimestamp: 2017-10-15 21:00:37 -0200
+Starting leader electiontimestamp: 2017-10-15 21:00:40 -0200
+Starting leader electiontimestamp: 2017-10-15 21:00:51 -0200
+Starting leader electiontimestamp: 2017-10-15 21:01:01 -0200
+Starting leader electiontimestamp: 2017-10-15 21:01:11 -0200
+Starting leader electiontimestamp: 2017-10-15 21:01:22 -0200
+Starting leader electiontimestamp: 2017-10-15 21:06:39 -0200
+Starting leader electiontimestamp: 2017-10-15 21:06:50 -0200

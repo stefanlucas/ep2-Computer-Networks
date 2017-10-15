@@ -21,6 +21,7 @@ class Peer
     @debug = true
     @t = Time.new
     @filename = "log.txt"
+    @file_mutex = Mutex.new
     @peers_mutex = Mutex.new
 
     Socket.ip_address_list.each do |addr_info|
@@ -69,21 +70,30 @@ class Peer
     }
   end
 
+  def write_log(line) 
+    File.open(@filename, 'a') { |f| 
+      f.flock(File::LOCK_EX)
+      f.puts line + "timestamp: " + Time.new.to_s
+    }
+  end
+
   def handle(socket)
     Thread.new { 
-      begin
+      #begin
       message = socket.gets
       puts "Peer " + socket.peeraddr[3].to_s + " request: " + message
       message = message.split(/[ \r\n]/)
       # caso em que é a primeira vez que o peer se conecta
-      if @peers[socket.peeraddr[3]] == nil  
-        puts "He just connected to the network"
+      if @peers[socket.peeraddr[3]] == nil
+        write_log "Peer" + socket.peeraddr[3] + " connected"  
+        puts socket.peeraddr[3] + " connected"
         @peers_mutex.synchronize {
           @peers[socket.peeraddr[3]] = Hash.new
         }
         @peers[socket.peeraddr[3]][:status] = "connected"
       # caso a conexão do peer tenha caido anteriormente
       elsif @peers[socket.peeraddr[3]][:status] == "disconnected"        
+        write_log "Peer" + socket.peeraddr[3] + " reconnected" 
         puts socket.peeraddr[3] + "reconnected to the network"
         @peers[socket.peeraddr[3]][:status] = "connected"
       end
@@ -95,8 +105,10 @@ class Peer
             response = "no"
           end
         when "leader_election"
+          write_log "Peer" + socket.peeraddr[3] + " initiated the election" 
           response = socket.gets.split(/[ \r\n]/)
           if response[0] == "you_were_elected"
+            write_log "I was elected as the leader"
             @leader = true
             @leader_id = @id
             x, y = response[1].split(",")
@@ -110,6 +122,7 @@ class Peer
             @leader = false
             response = socket.gets.split(/[ \r\n]/)
             @leader_id = response[1]
+            write_log "Peer " + @leader_id + "is the leader now"
           end
           @t = Time.now
         when "get_computation_info"
@@ -143,10 +156,12 @@ class Peer
           response = "ok"
         when "is_prime"
           puts @number.to_s + " é primo"
+          write_log "Peer " + socket.peeraddr[3] + "sent: " + @number.to_s + "is prime"
           socket.puts "ok"
           exit(0)
         when "not_prime"
           puts "Number is not prime " + message[1] + " divides " + @number.to_s
+          write_log "Peer " + socket.peeraddr[3] + " sent: number is not prime " + message[1] + " divides " + @number.to_s
           socket.puts "ok"
           exit(0) 
         else
@@ -155,8 +170,8 @@ class Peer
         puts "response: " + response.to_s
         socket.puts response
       socket.close
-      rescue
-      end
+      #rescue
+      #end
     }
   end
 
@@ -190,6 +205,7 @@ class Peer
           i = @interval[:low]
           while i <= @interval[:high] do
             if @number % i == 0
+              write_log "Broadcasting: not prime " + i.to_s + " divide " + @number.to_s 
               puts "Não é primo " + i.to_s + " divide " + @number.to_s
               message = "not_prime" + " " + i.to_s
               broadcast(message)
@@ -197,7 +213,7 @@ class Peer
             end
             i += 1
           end
-          message = "finish_interval_computation" + " " + @interval[:low].to_s + "," + @interval[:high].to_s
+          message = "finish_interval_computation " + @interval[:low].to_s + "," + @interval[:high].to_s
           broadcast(message)
         end
         if Time.new - time_heartbeat > 120
@@ -206,6 +222,7 @@ class Peer
         end
         if @leader
           if check_end() == true
+            wirte_log  "Broadcasting: " + @number.to_s + " is prime"
             broadcast("is_prime")
             puts "O número é primo"
             exit(0)
@@ -232,10 +249,11 @@ class Peer
           end
         end
         if @leader 
-          puts "OI EU SOU O LIDER"
+          puts "*"*15 + "LEADER" + "*"*15
         end
         if @leader and Time.now - @t > 10
-          puts "VAI ROLAR ELEIÇÃO SEUS FILHO DA PUTA"
+          write_log "Starting leader election"
+          puts "Starting leader election"
           leader_election
           @t = Time.now
         end    
@@ -261,10 +279,9 @@ class Peer
       end
     }
     elected_leader = rand(array.length)
-    puts "NUMERO ALEATORIO GERADOOOOOOOOOOOOOOOOO: " + elected_leader.to_s
-    puts "TAMANHUUUUUUUU DU ARRAYYYYYYYYYYYY: " + array.length.to_s
     if array[elected_leader][0] == @id
       @leader = true
+      write_log "Election finished, I'm the leader"
     else
       @leader = false
     end
@@ -312,7 +329,7 @@ class Peer
             end
           end
           if socket == false
-            puts "maquina " + id + " caiu, colocando intervalo na fila de pendentes"
+            puts "Peer " + id + " caiu, colocando intervalo na fila de pendentes"
             @interval_queue.push({low: @peers[id][:low], high: @peers[id][:high]})
             @peers[id][:low] = @peers[id][:high] = false
             @peers[id][:status] = "disconnected"
