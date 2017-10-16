@@ -1,12 +1,20 @@
+O programa foi feito em Ruby e utiliza apenas módulos da biblioteca padrão, portanto
+basta instalar o ruby na máquina para poder rodá-lo. 
+As versões testadas foram 2.3.0 e 2.4.0, caso esteja usando uma distro linux com 
+apt-get, para instalar o Ruby basta digitar os seguintes comandos:
+sudo apt-get update
+sudo apt-get install ruby-full
 
-ruby ep2.rb 
-ruby ep2.rb debug
-
+Para rodar o programa, no caso do primeiro código, tem as seguintes opções:
 ruby ep2.rb numero 
 ruby ep2.rb numero quantum
-ruby ep2.rb numero debug 
-ruby ep2.rb numero debug quantum
+Onde numero é o número a ser testado e quantum é o tamanho do intervalo 
+a ser distribuido para os peers.
+Caso não seja o primeiro código, só tem a opção de rodar sem argumentos:
+ruby ep2.rb
 
-Obs: O quantum deve ser colocados apenas primeiro código a ser executado
-
-
+Obs1: O programa assume que o computador está conectado em uma interface
+da forma 192.168.*.* e que só último octeto varia para os pcs.
+Obs2: Com exceção do líder, todos os peers podem se desconectar com ctrl+C e depois
+se conectar novamente sem problemas.
+Obs3: O quantum possui valor default de 10^7.

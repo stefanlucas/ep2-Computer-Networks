@@ -3,7 +3,6 @@ require 'ipaddr'
 require 'thread'
 require 'time'
 
-Thread.abort_on_exception=true #tirar isso depois
 class Peer
   def initialize(port, number = nil, quantum=10000000)
     @server = TCPServer.open(port)
@@ -82,7 +81,7 @@ class Peer
 
   def handle(socket)
     Thread.new { 
-      #begin
+      begin
       message = socket.gets
       # caso em que é a primeira vez que o peer se conecta
       if @peers[socket.peeraddr[3]] == nil
@@ -178,8 +177,8 @@ class Peer
         write_log "response: " + response.to_s
         socket.puts response
       socket.close
-      #rescue
-      #end
+      rescue
+      end
     }
   end
 
@@ -208,14 +207,14 @@ class Peer
     tr = Thread.new {
       time_heartbeat = Time.new
       loop {
-        if @interval[:low] == false || @interval[:low] == nil || @interval[:low] == 0
+        if @interval[:low] == false || @interval[:low] == nil || @interval[:low] == 0 || @interval[:high] == 0
           write_log "waiting for new interval or end of primality test"
           puts "waiting for new interval or end of primality test"
         else
           write_log "testing interval " + @interval[:low].to_s + "," + @interval[:high].to_s
           puts "testing interval " + @interval[:low].to_s + "," + @interval[:high].to_s
         end
-        if @interval[:low] != false and @interval[:low] != nil and @interval[:low] != 0
+        if @interval[:low] != false and @interval[:low] != nil and @interval[:low] != 0 and @interval[:high] != 0
           i = @interval[:low]
           while i <= @interval[:high] do
             if @number % i == 0
@@ -232,7 +231,7 @@ class Peer
           #write_log "Broadcasting: " + message
           broadcast(message)
         end
-        if Time.new - time_heartbeat > 15
+        if Time.new - time_heartbeat > 20
           heartbeat
           time_heartbeat = Time.new
         end
@@ -268,7 +267,7 @@ class Peer
         if @leader 
           puts "*"*15 + "LEADER" + "*"*15
         end
-        if @leader and Time.now - @t > 10
+        if @leader and Time.now - @t > 30
           write_log "Starting leader election"
           puts "Starting leader election"
           leader_election
@@ -430,7 +429,6 @@ class Peer
           @quantum = response[1].to_i
           dia, hora, gmt = response[2], response[3], response[4]
           @t0 = Time.parse(dia + " " + hora + " " + gmt)
-          puts "TEMPO DE INICIO DO BAGUIIIIIIIIIIIIIIIIIIIIIIIIIIIIII: " + @t0.to_s
           x, y = response[3].split(",")
           @remaining_interval[:low], @remaining_interval[:high] = x.to_i, y.to_i
           for i in 4..(response.size - 1) 
