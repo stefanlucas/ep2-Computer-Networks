@@ -24,6 +24,10 @@ class Peer
     @file_mutex = Mutex.new
     @peers_mutex = Mutex.new
 
+    File.open(@filename, 'w') { |f| 
+      f.flock(File::LOCK_EX)
+    }
+
     Socket.ip_address_list.each do |addr_info|
       if (addr_info.ip_address =~ /192.168.*.*/) == 0
         @id = addr_info.ip_address
@@ -85,7 +89,7 @@ class Peer
       message = message.split(/[ \r\n]/)
       # caso em que é a primeira vez que o peer se conecta
       if @peers[socket.peeraddr[3]] == nil
-        write_log "Peer" + socket.peeraddr[3] + " connected"  
+        write_log "Peer " + socket.peeraddr[3] + " connected"  
         puts socket.peeraddr[3] + " connected"
         @peers_mutex.synchronize {
           @peers[socket.peeraddr[3]] = Hash.new
@@ -93,7 +97,7 @@ class Peer
         @peers[socket.peeraddr[3]][:status] = "connected"
       # caso a conexão do peer tenha caido anteriormente
       elsif @peers[socket.peeraddr[3]][:status] == "disconnected"        
-        write_log "Peer" + socket.peeraddr[3] + " reconnected" 
+        write_log "Peer " + socket.peeraddr[3] + " reconnected" 
         puts socket.peeraddr[3] + "reconnected to the network"
         @peers[socket.peeraddr[3]][:status] = "connected"
       end
@@ -114,15 +118,16 @@ class Peer
             x, y = response[1].split(",")
             @remaining_interval[:low], @remaining_interval[:high] = x.to_i, y.to_i
             @interval_queue = []
-            for i in 2..(response.size - 1) 
-              low, high = response[i].split(",")
-              @interval_queue << {low: low.to_i, high: high.to_i}
+            if response.length > 2 
+              for i in 2..(response.length - 1) 
+                low, high = response[i].split(",")
+                @interval_queue << {low: low.to_i, high: high.to_i}
+              end
             end
           else
             @leader = false
-            response = socket.gets.split(/[ \r\n]/)
             @leader_id = response[1]
-            write_log "Peer " + @leader_id + "is the leader now"
+            write_log "Leader is " + @leader_id
           end
           @t = Time.now
         when "get_computation_info"
