@@ -42,10 +42,10 @@ class Peer
       @leader = true
       @leader_id = @id
         if number.abs == 2 
-          puts "É primo"
+          puts "Is prime"
           exit(0)
         elsif number.abs == 1 || number.abs == 0
-          puts "Não é primo"
+          puts "Not prime"
           exit(0)
         end 
 
@@ -99,7 +99,7 @@ class Peer
         @peers[socket.peeraddr[3]][:status] = "connected"
       end
       write_log "Peer " + socket.peeraddr[3].to_s + " request: " + message.chomp 
-      puts "Peer " + socket.peeraddr[3].to_s + " request: " + message.chomp
+      #puts "Peer " + socket.peeraddr[3].to_s + " request: " + message.chomp
       message = message.split(/[ \r\n]/)
       case message[0]
         when "leader?"
@@ -161,20 +161,20 @@ class Peer
           response = "ok"
         when "is_prime"
           tf = Time.new - @t0
-          puts @number.to_s + " é primo" + "\ntime: " + tf.to_s + " s"
-          write_log "Peer " + socket.peeraddr[3] + "sent: " + @number.to_s + "is prime"
+          puts "\n" + @number.to_s + " is prime" + "\ntime: " + tf.to_s + " s"
+          write_log "Peer " + socket.peeraddr[3] + " sent: " + @number.to_s + " is prime"
           socket.puts "ok"
           exit(0)
         when "not_prime"
           tf = Time.new - @t0
-          puts "Number is not prime " + message[1] + " divides " + @number.to_s + "\ntime: " + tf.to_s + " s"
+          puts "\nNumber is not prime " + message[1] + " divides " + @number.to_s + "\ntime: " + tf.to_s + " s"
           write_log "Peer " + socket.peeraddr[3] + " sent: number is not prime " + message[1] + " divides " + @number.to_s
           socket.puts "ok"
           exit(0) 
         else
           response = "Unknow command"
         end
-        puts "response: " + response.to_s
+        #puts "response: " + response.to_s
         write_log "response: " + response.to_s
         socket.puts response
       socket.close
@@ -221,7 +221,7 @@ class Peer
             if @number % i == 0
               write_log "Broadcasting: not prime " + i.to_s + " divide " + @number.to_s 
               tf = Time.new - @t0
-              puts "Not prime " + i.to_s + " divide " + @number.to_s + "\ntime: " + tf.to_s + " s"
+              puts "\nNot prime " + i.to_s + " divide " + @number.to_s + "\ntime: " + tf.to_s + " s"
               message = "not_prime" + " " + i.to_s
               broadcast(message)
               exit(0)
@@ -240,7 +240,7 @@ class Peer
           if check_end() == true
             write_log  "Broadcasting: " + @number.to_s + " is prime"
             tf = Time.now - @t0
-            puts "The number is prime\ntime: " + tf.to_s + " s"
+            puts "\nThe number is prime\ntime: " + tf.to_s + " s"
             broadcast("is_prime")
             exit(0)
           end 
@@ -428,10 +428,12 @@ class Peer
           response = response.split(/[ \r\n]/)
           @number = response[0].to_i
           @quantum = response[1].to_i
-          @t0 = Time.parse(response[2])
-          x, y = response[2].split(",")
+          dia, hora, gmt = response[2], response[3], response[4]
+          @t0 = Time.parse(dia + " " + hora + " " + gmt)
+          puts "TEMPO DE INICIO DO BAGUIIIIIIIIIIIIIIIIIIIIIIIIIIIIII: " + @t0.to_s
+          x, y = response[3].split(",")
           @remaining_interval[:low], @remaining_interval[:high] = x.to_i, y.to_i
-          for i in 2..(response.size - 1) 
+          for i in 4..(response.size - 1) 
             low, high = response[i].split(",")
             @interval_queue << {low: low.to_i, high: high.to_i}
           end
