@@ -1,12 +1,24 @@
-Peer 192.168.1.107 connected timestamp: 2017-10-15 22:02:30 -0200
-Starting leader election timestamp: 2017-10-15 22:02:31 -0200
-Peer 192.168.1.107 initiated the election timestamp: 2017-10-15 22:02:42 -0200
-Leader is 192.168.1.107 timestamp: 2017-10-15 22:02:42 -0200
-Peer 192.168.1.107 initiated the election timestamp: 2017-10-15 22:02:53 -0200
-Leader is 192.168.1.107 timestamp: 2017-10-15 22:02:53 -0200
-Peer 192.168.1.107 initiated the election timestamp: 2017-10-15 22:03:03 -0200
-I was elected as the leader timestamp: 2017-10-15 22:03:03 -0200
-Starting leader election timestamp: 2017-10-15 22:03:14 -0200
-Election finished, I'm the leader timestamp: 2017-10-15 22:03:14 -0200
-Starting leader election timestamp: 2017-10-15 22:03:24 -0200
-Peer 192.168.1.107sent: 1000000007is prime timestamp: 2017-10-15 22:03:30 -0200
+testing interval 2,10000000 timestamp: 2017-10-15 23:27:01 -0200
+testing interval 10000001,20000001 timestamp: 2017-10-15 23:27:02 -0200
+testing interval 20000002,30000002 timestamp: 2017-10-15 23:27:04 -0200
+testing interval 30000003,40000003 timestamp: 2017-10-15 23:27:05 -0200
+testing interval 40000004,50000004 timestamp: 2017-10-15 23:27:06 -0200
+testing interval 50000005,60000005 timestamp: 2017-10-15 23:27:07 -0200
+testing interval 60000006,70000006 timestamp: 2017-10-15 23:27:08 -0200
+testing interval 70000007,80000007 timestamp: 2017-10-15 23:27:09 -0200
+testing interval 80000008,90000008 timestamp: 2017-10-15 23:27:10 -0200
+Peer 192.168.1.107 connected timestamp: 2017-10-15 23:27:11 -0200
+testing interval 90000009,100000006 timestamp: 2017-10-15 23:27:11 -0200
+Peer 192.168.1.107 request: leader? timestamp: 2017-10-15 23:27:11 -0200
+response: yes timestamp: 2017-10-15 23:27:12 -0200
+Peer 192.168.1.107 request: get_computation_info timestamp: 2017-10-15 23:27:12 -0200
+response: 100000007 100000006,100000006 timestamp: 2017-10-15 23:27:12 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-15 23:27:12 -0200
+response: no_interval timestamp: 2017-10-15 23:27:12 -0200
+Peer 192.168.1.107 request: peer_interval timestamp: 2017-10-15 23:27:12 -0200
+response: 90000009,100000006 timestamp: 2017-10-15 23:27:12 -0200
+Peer 192.168.1.107 request: ping timestamp: 2017-10-15 23:27:14 -0200
+response: pong timestamp: 2017-10-15 23:27:14 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-15 23:27:14 -0200
+response: no_interval timestamp: 2017-10-15 23:27:14 -0200
+Broadcasting: 100000007 is prime timestamp: 2017-10-15 23:27:15 -0200

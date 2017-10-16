@@ -85,8 +85,6 @@ class Peer
     Thread.new { 
       #begin
       message = socket.gets
-      puts "Peer " + socket.peeraddr[3].to_s + " request: " + message
-      message = message.split(/[ \r\n]/)
       # caso em que é a primeira vez que o peer se conecta
       if @peers[socket.peeraddr[3]] == nil
         write_log "Peer " + socket.peeraddr[3] + " connected"  
@@ -101,6 +99,9 @@ class Peer
         puts socket.peeraddr[3] + "reconnected to the network"
         @peers[socket.peeraddr[3]][:status] = "connected"
       end
+      write_log "Peer " + socket.peeraddr[3].to_s + " request: " + message.chomp 
+      puts "Peer " + socket.peeraddr[3].to_s + " request: " + message.chomp
+      message = message.split(/[ \r\n]/)
       case message[0]
         when "leader?"
           if @leader
@@ -112,7 +113,7 @@ class Peer
           write_log "Peer " + socket.peeraddr[3] + " initiated the election" 
           response = socket.gets.split(/[ \r\n]/)
           if response[0] == "you_were_elected"
-            write_log "I was elected as the leader"
+            write_log "Election result: I was elected as the leader"
             @leader = true
             @leader_id = @id
             x, y = response[1].split(",")
@@ -127,7 +128,7 @@ class Peer
           else
             @leader = false
             @leader_id = response[1]
-            write_log "Leader is " + @leader_id
+            write_log "Election result: Leader is " + @leader_id
           end
           @t = Time.now
         when "get_computation_info"
@@ -142,8 +143,8 @@ class Peer
               if @peers[socket.peeraddr[3]][:low] == false
                 response = "no_interval"
               else
-              response = @peers[socket.peeraddr[3]][:low].to_s + "," + @peers[socket.peeraddr[3]][:high].to_s
-            end         
+                response = @peers[socket.peeraddr[3]][:low].to_s + "," + @peers[socket.peeraddr[3]][:high].to_s
+              end         
           else 
             #caso o peer tinha se desconectado anteriormente sem terminar o trabalho e não deu tempo do líder perceber
             response = @peers[socket.peeraddr[3]][:low].to_s + "," + @peers[socket.peeraddr[3]][:high].to_s
@@ -173,6 +174,7 @@ class Peer
           response = "Unknow command"
         end
         puts "response: " + response.to_s
+        write_log "response: " + response.to_s
         socket.puts response
       socket.close
       #rescue
@@ -205,13 +207,19 @@ class Peer
     tr = Thread.new {
       time_heartbeat = Time.new
       loop {
-        puts "testing interval " + @interval[:low].to_s + "," + @interval[:high].to_s
+        if @interval[:low] == false || @interval[:low] == nil || @interval[:low] == 0
+          write_log "waiting for new interval or end of primality test"
+          puts "waiting for new interval or end of primality test"
+        else
+          write_log "testing interval " + @interval[:low].to_s + "," + @interval[:high].to_s
+          puts "testing interval " + @interval[:low].to_s + "," + @interval[:high].to_s
+        end
         if @interval[:low] != false and @interval[:low] != nil and @interval[:low] != 0
           i = @interval[:low]
           while i <= @interval[:high] do
             if @number % i == 0
               write_log "Broadcasting: not prime " + i.to_s + " divide " + @number.to_s 
-              puts "Não é primo " + i.to_s + " divide " + @number.to_s
+              puts "Not prime " + i.to_s + " divide " + @number.to_s
               message = "not_prime" + " " + i.to_s
               broadcast(message)
               exit(0)
@@ -219,9 +227,10 @@ class Peer
             i += 1
           end
           message = "finish_interval_computation " + @interval[:low].to_s + "," + @interval[:high].to_s
+          #write_log "Broadcasting: " + message
           broadcast(message)
         end
-        if Time.new - time_heartbeat > 120
+        if Time.new - time_heartbeat > 15
           heartbeat
           time_heartbeat = Time.new
         end
@@ -229,7 +238,7 @@ class Peer
           if check_end() == true
             write_log  "Broadcasting: " + @number.to_s + " is prime"
             broadcast("is_prime")
-            puts "O número é primo"
+            puts "The number is prime"
             exit(0)
           end 
           @interval[:low], @interval[:high] = select_interval()
@@ -286,9 +295,12 @@ class Peer
     elected_leader = rand(array.length)
     if array[elected_leader][0] == @id
       @leader = true
+      puts "Election finished, I'm the leader"
       write_log "Election finished, I'm the leader"
     else
       @leader = false
+      puts "leader_is " + @leader_id
+      write_log "leader_is " + @leader_id
     end
     @leader_id = array[elected_leader][0]
     array.each do |x|
@@ -323,7 +335,7 @@ class Peer
       @peers_mutex.synchronize {
       @peers.each_key do |id| 
         if (@peers[id][:low] != false && @peers[id][:low] != nil && @peers[id][:low] != 0)
-          puts "teste pendente: " + @peers[id][:low].to_s + ", " + @peers[id][:high].to_s
+          puts "Pending test: " + @peers[id][:low].to_s + ", " + @peers[id][:high].to_s
           socket = try_connect(id)
           if socket != false
             begin
@@ -334,7 +346,7 @@ class Peer
             end
           end
           if socket == false
-            puts "Peer " + id + " caiu, colocando intervalo na fila de pendentes"
+            puts "Peer " + id + " is disconnected, putting on pendent interval queue"
             @interval_queue.push({low: @peers[id][:low], high: @peers[id][:high]})
             @peers[id][:low] = @peers[id][:high] = false
             @peers[id][:status] = "disconnected"
@@ -356,7 +368,8 @@ class Peer
           socket.puts "ping"
           socket.gets
         rescue
-          puts "Peer " + id + " desconectado"
+          write_log "Peer " + id + " disconnected"
+          puts "Peer " + id + " disconnected"
           @peers[id][:status] = "disconnected"
           next
         end
@@ -383,6 +396,7 @@ class Peer
 
   def connect_peers
     ips = ipscan()
+    puts "Machine list from this network"
     ips.each do |ip|
       puts "ip = " + ip
     end
@@ -421,7 +435,7 @@ class Peer
           socket.puts "new_interval"
           response = socket.gets
           puts "Response: " + response
-          if response == "no_interval"
+          if response.chomp == "no_interval"
             @interval[:low] = @interval[:high] = false
           else
             response = response.chomp.split(/[,\r\n]/) 
@@ -448,7 +462,7 @@ class Peer
       end       
     end
     if @leader_id == nil
-      puts "Não foi possível encontrar o líder"
+      puts "Unable to find the leader"
       exit(1)
     end
     puts "End finding connections"
