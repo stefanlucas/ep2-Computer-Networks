@@ -15,7 +15,7 @@ request: peer_info check
 response se tiver: x,y(current computation) 
 caso contrário: no_interval 
 
-request: leader? check
+request: leader? 
 response: yes|no
 
 request: ping

@@ -1,24 +1,250 @@
-testing interval 2,10000000 timestamp: 2017-10-15 23:27:01 -0200
-testing interval 10000001,20000001 timestamp: 2017-10-15 23:27:02 -0200
-testing interval 20000002,30000002 timestamp: 2017-10-15 23:27:04 -0200
-testing interval 30000003,40000003 timestamp: 2017-10-15 23:27:05 -0200
-testing interval 40000004,50000004 timestamp: 2017-10-15 23:27:06 -0200
-testing interval 50000005,60000005 timestamp: 2017-10-15 23:27:07 -0200
-testing interval 60000006,70000006 timestamp: 2017-10-15 23:27:08 -0200
-testing interval 70000007,80000007 timestamp: 2017-10-15 23:27:09 -0200
-testing interval 80000008,90000008 timestamp: 2017-10-15 23:27:10 -0200
-Peer 192.168.1.107 connected timestamp: 2017-10-15 23:27:11 -0200
-testing interval 90000009,100000006 timestamp: 2017-10-15 23:27:11 -0200
-Peer 192.168.1.107 request: leader? timestamp: 2017-10-15 23:27:11 -0200
-response: yes timestamp: 2017-10-15 23:27:12 -0200
-Peer 192.168.1.107 request: get_computation_info timestamp: 2017-10-15 23:27:12 -0200
-response: 100000007 100000006,100000006 timestamp: 2017-10-15 23:27:12 -0200
-Peer 192.168.1.107 request: new_interval timestamp: 2017-10-15 23:27:12 -0200
-response: no_interval timestamp: 2017-10-15 23:27:12 -0200
-Peer 192.168.1.107 request: peer_interval timestamp: 2017-10-15 23:27:12 -0200
-response: 90000009,100000006 timestamp: 2017-10-15 23:27:12 -0200
-Peer 192.168.1.107 request: ping timestamp: 2017-10-15 23:27:14 -0200
-response: pong timestamp: 2017-10-15 23:27:14 -0200
-Peer 192.168.1.107 request: new_interval timestamp: 2017-10-15 23:27:14 -0200
-response: no_interval timestamp: 2017-10-15 23:27:14 -0200
-Broadcasting: 100000007 is prime timestamp: 2017-10-15 23:27:15 -0200
+testing interval 2,10000000 timestamp: 2017-10-16 01:58:04 -0200
+testing interval 10000001,20000001 timestamp: 2017-10-16 01:58:05 -0200
+testing interval 20000002,30000002 timestamp: 2017-10-16 01:58:07 -0200
+testing interval 30000003,40000003 timestamp: 2017-10-16 01:58:08 -0200
+testing interval 40000004,50000004 timestamp: 2017-10-16 01:58:09 -0200
+testing interval 50000005,60000005 timestamp: 2017-10-16 01:58:11 -0200
+testing interval 60000006,70000006 timestamp: 2017-10-16 01:58:12 -0200
+Peer 192.168.1.107 connected timestamp: 2017-10-16 01:58:13 -0200
+Peer 192.168.1.107 request: leader? timestamp: 2017-10-16 01:58:13 -0200
+response: yes timestamp: 2017-10-16 01:58:13 -0200
+Peer 192.168.1.107 request: get_computation_info timestamp: 2017-10-16 01:58:13 -0200
+response: 1000000007 10000000 2017-10-16 01:58:04 -0200 70000007,1000000006 timestamp: 2017-10-16 01:58:13 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:13 -0200
+response: 70000007,80000007 timestamp: 2017-10-16 01:58:13 -0200
+Peer 192.168.1.107 request: peer_interval timestamp: 2017-10-16 01:58:13 -0200
+response: 60000006,70000006 timestamp: 2017-10-16 01:58:13 -0200
+Peer 192.168.1.107 request: ping timestamp: 2017-10-16 01:58:14 -0200
+response: pong timestamp: 2017-10-16 01:58:14 -0200
+Starting leader election timestamp: 2017-10-16 01:58:14 -0200
+Election finished, I'm the leader timestamp: 2017-10-16 01:58:14 -0200
+testing interval 80000008,90000008 timestamp: 2017-10-16 01:58:14 -0200
+Peer 192.168.1.107 request: finish_interval_computation 70000007,80000007 timestamp: 2017-10-16 01:58:15 -0200
+response: ok timestamp: 2017-10-16 01:58:15 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:15 -0200
+response: 90000009,100000009 timestamp: 2017-10-16 01:58:15 -0200
+testing interval 100000010,110000010 timestamp: 2017-10-16 01:58:16 -0200
+Peer 192.168.1.107 request: finish_interval_computation 90000009,100000009 timestamp: 2017-10-16 01:58:17 -0200
+response: ok timestamp: 2017-10-16 01:58:17 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:17 -0200
+response: 110000011,120000011 timestamp: 2017-10-16 01:58:17 -0200
+testing interval 120000012,130000012 timestamp: 2017-10-16 01:58:17 -0200
+Peer 192.168.1.107 request: finish_interval_computation 110000011,120000011 timestamp: 2017-10-16 01:58:18 -0200
+response: ok timestamp: 2017-10-16 01:58:18 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:18 -0200
+response: 130000013,140000013 timestamp: 2017-10-16 01:58:18 -0200
+testing interval 140000014,150000014 timestamp: 2017-10-16 01:58:18 -0200
+Peer 192.168.1.107 request: finish_interval_computation 130000013,140000013 timestamp: 2017-10-16 01:58:20 -0200
+response: ok timestamp: 2017-10-16 01:58:20 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:20 -0200
+response: 150000015,160000015 timestamp: 2017-10-16 01:58:20 -0200
+testing interval 160000016,170000016 timestamp: 2017-10-16 01:58:20 -0200
+Peer 192.168.1.107 request: finish_interval_computation 150000015,160000015 timestamp: 2017-10-16 01:58:21 -0200
+response: ok timestamp: 2017-10-16 01:58:21 -0200
+testing interval 170000017,180000017 timestamp: 2017-10-16 01:58:21 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:21 -0200
+response: 180000018,190000018 timestamp: 2017-10-16 01:58:22 -0200
+testing interval 190000019,200000019 timestamp: 2017-10-16 01:58:22 -0200
+Peer 192.168.1.107 request: finish_interval_computation 180000018,190000018 timestamp: 2017-10-16 01:58:24 -0200
+response: ok timestamp: 2017-10-16 01:58:24 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:24 -0200
+response: 200000020,210000020 timestamp: 2017-10-16 01:58:24 -0200
+testing interval 210000021,220000021 timestamp: 2017-10-16 01:58:24 -0200
+Peer 192.168.1.107 request: finish_interval_computation 200000020,210000020 timestamp: 2017-10-16 01:58:25 -0200
+response: ok timestamp: 2017-10-16 01:58:25 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:25 -0200
+response: 220000022,230000022 timestamp: 2017-10-16 01:58:25 -0200
+Starting leader election timestamp: 2017-10-16 01:58:25 -0200
+leader_is 192.168.1.105 timestamp: 2017-10-16 01:58:25 -0200
+testing interval 230000023,240000023 timestamp: 2017-10-16 01:58:25 -0200
+Peer 192.168.1.107 request: finish_interval_computation 220000022,230000022 timestamp: 2017-10-16 01:58:27 -0200
+response: ok timestamp: 2017-10-16 01:58:27 -0200
+testing interval 250000025,260000025 timestamp: 2017-10-16 01:58:27 -0200
+Peer 192.168.1.107 request: finish_interval_computation 240000024,250000024 timestamp: 2017-10-16 01:58:28 -0200
+response: ok timestamp: 2017-10-16 01:58:28 -0200
+testing interval 270000027,280000027 timestamp: 2017-10-16 01:58:28 -0200
+Peer 192.168.1.107 request: finish_interval_computation 260000026,270000026 timestamp: 2017-10-16 01:58:29 -0200
+response: ok timestamp: 2017-10-16 01:58:29 -0200
+Peer 192.168.1.107 request: ping timestamp: 2017-10-16 01:58:29 -0200
+response: pong timestamp: 2017-10-16 01:58:29 -0200
+testing interval 290000029,300000029 timestamp: 2017-10-16 01:58:30 -0200
+Peer 192.168.1.107 request: finish_interval_computation 280000028,290000028 timestamp: 2017-10-16 01:58:31 -0200
+response: ok timestamp: 2017-10-16 01:58:31 -0200
+testing interval 310000031,320000031 timestamp: 2017-10-16 01:58:31 -0200
+Peer 192.168.1.107 request: finish_interval_computation 300000030,310000030 timestamp: 2017-10-16 01:58:33 -0200
+response: ok timestamp: 2017-10-16 01:58:33 -0200
+testing interval 330000033,340000033 timestamp: 2017-10-16 01:58:33 -0200
+Peer 192.168.1.107 request: finish_interval_computation 320000032,330000032 timestamp: 2017-10-16 01:58:34 -0200
+response: ok timestamp: 2017-10-16 01:58:34 -0200
+testing interval 350000035,360000035 timestamp: 2017-10-16 01:58:34 -0200
+Peer 192.168.1.107 request: finish_interval_computation 340000034,350000034 timestamp: 2017-10-16 01:58:36 -0200
+response: ok timestamp: 2017-10-16 01:58:36 -0200
+Peer 192.168.1.107 request: leader_election timestamp: 2017-10-16 01:58:36 -0200
+Peer 192.168.1.107 initiated the election timestamp: 2017-10-16 01:58:36 -0200
+Election result: I was elected as the leader timestamp: 2017-10-16 01:58:36 -0200
+response: ["you_were_elected", "370000037,1000000006"] timestamp: 2017-10-16 01:58:36 -0200
+testing interval 370000037,380000037 timestamp: 2017-10-16 01:58:36 -0200
+Peer 192.168.1.107 request: finish_interval_computation 360000036,370000036 timestamp: 2017-10-16 01:58:37 -0200
+response: ok timestamp: 2017-10-16 01:58:37 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:37 -0200
+response: 380000038,390000038 timestamp: 2017-10-16 01:58:37 -0200
+testing interval 390000039,400000039 timestamp: 2017-10-16 01:58:37 -0200
+Peer 192.168.1.107 request: finish_interval_computation 380000038,390000038 timestamp: 2017-10-16 01:58:38 -0200
+response: ok timestamp: 2017-10-16 01:58:38 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:38 -0200
+response: 400000040,410000040 timestamp: 2017-10-16 01:58:38 -0200
+testing interval 410000041,420000041 timestamp: 2017-10-16 01:58:38 -0200
+Peer 192.168.1.107 request: finish_interval_computation 400000040,410000040 timestamp: 2017-10-16 01:58:40 -0200
+response: ok timestamp: 2017-10-16 01:58:40 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:40 -0200
+response: 420000042,430000042 timestamp: 2017-10-16 01:58:40 -0200
+testing interval 430000043,440000043 timestamp: 2017-10-16 01:58:40 -0200
+Peer 192.168.1.107 request: finish_interval_computation 420000042,430000042 timestamp: 2017-10-16 01:58:41 -0200
+response: ok timestamp: 2017-10-16 01:58:41 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:41 -0200
+response: 440000044,450000044 timestamp: 2017-10-16 01:58:41 -0200
+testing interval 450000045,460000045 timestamp: 2017-10-16 01:58:41 -0200
+Peer 192.168.1.107 request: finish_interval_computation 440000044,450000044 timestamp: 2017-10-16 01:58:42 -0200
+response: ok timestamp: 2017-10-16 01:58:42 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:42 -0200
+response: 460000046,470000046 timestamp: 2017-10-16 01:58:42 -0200
+testing interval 470000047,480000047 timestamp: 2017-10-16 01:58:42 -0200
+Peer 192.168.1.107 request: finish_interval_computation 460000046,470000046 timestamp: 2017-10-16 01:58:44 -0200
+response: ok timestamp: 2017-10-16 01:58:44 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:44 -0200
+response: 480000048,490000048 timestamp: 2017-10-16 01:58:44 -0200
+testing interval 490000049,500000049 timestamp: 2017-10-16 01:58:44 -0200
+Peer 192.168.1.107 request: finish_interval_computation 480000048,490000048 timestamp: 2017-10-16 01:58:45 -0200
+response: ok timestamp: 2017-10-16 01:58:45 -0200
+Peer 192.168.1.107 request: ping timestamp: 2017-10-16 01:58:45 -0200
+response: pong timestamp: 2017-10-16 01:58:45 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:45 -0200
+response: 500000050,510000050 timestamp: 2017-10-16 01:58:45 -0200
+testing interval 510000051,520000051 timestamp: 2017-10-16 01:58:45 -0200
+Peer 192.168.1.107 request: finish_interval_computation 500000050,510000050 timestamp: 2017-10-16 01:58:46 -0200
+response: ok timestamp: 2017-10-16 01:58:46 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:46 -0200
+response: 520000052,530000052 timestamp: 2017-10-16 01:58:46 -0200
+Starting leader election timestamp: 2017-10-16 01:58:46 -0200
+Election finished, I'm the leader timestamp: 2017-10-16 01:58:46 -0200
+testing interval 530000053,540000053 timestamp: 2017-10-16 01:58:46 -0200
+Peer 192.168.1.107 request: finish_interval_computation 520000052,530000052 timestamp: 2017-10-16 01:58:48 -0200
+response: ok timestamp: 2017-10-16 01:58:48 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:48 -0200
+response: 540000054,550000054 timestamp: 2017-10-16 01:58:48 -0200
+testing interval 550000055,560000055 timestamp: 2017-10-16 01:58:48 -0200
+Peer 192.168.1.107 request: finish_interval_computation 540000054,550000054 timestamp: 2017-10-16 01:58:49 -0200
+response: ok timestamp: 2017-10-16 01:58:49 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:49 -0200
+response: 560000056,570000056 timestamp: 2017-10-16 01:58:49 -0200
+testing interval 570000057,580000057 timestamp: 2017-10-16 01:58:49 -0200
+Peer 192.168.1.107 request: finish_interval_computation 560000056,570000056 timestamp: 2017-10-16 01:58:50 -0200
+response: ok timestamp: 2017-10-16 01:58:50 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:50 -0200
+response: 580000058,590000058 timestamp: 2017-10-16 01:58:50 -0200
+testing interval 590000059,600000059 timestamp: 2017-10-16 01:58:51 -0200
+Peer 192.168.1.107 request: finish_interval_computation 580000058,590000058 timestamp: 2017-10-16 01:58:52 -0200
+response: ok timestamp: 2017-10-16 01:58:52 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:52 -0200
+response: 600000060,610000060 timestamp: 2017-10-16 01:58:52 -0200
+testing interval 610000061,620000061 timestamp: 2017-10-16 01:58:52 -0200
+Peer 192.168.1.107 request: finish_interval_computation 600000060,610000060 timestamp: 2017-10-16 01:58:53 -0200
+response: ok timestamp: 2017-10-16 01:58:53 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:53 -0200
+response: 620000062,630000062 timestamp: 2017-10-16 01:58:53 -0200
+testing interval 630000063,640000063 timestamp: 2017-10-16 01:58:54 -0200
+Peer 192.168.1.107 request: finish_interval_computation 620000062,630000062 timestamp: 2017-10-16 01:58:55 -0200
+response: ok timestamp: 2017-10-16 01:58:55 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:55 -0200
+response: 640000064,650000064 timestamp: 2017-10-16 01:58:55 -0200
+testing interval 650000065,660000065 timestamp: 2017-10-16 01:58:55 -0200
+Peer 192.168.1.107 request: finish_interval_computation 640000064,650000064 timestamp: 2017-10-16 01:58:56 -0200
+response: ok timestamp: 2017-10-16 01:58:56 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:56 -0200
+response: 660000066,670000066 timestamp: 2017-10-16 01:58:56 -0200
+testing interval 670000067,680000067 timestamp: 2017-10-16 01:58:56 -0200
+Peer 192.168.1.107 request: finish_interval_computation 660000066,670000066 timestamp: 2017-10-16 01:58:58 -0200
+response: ok timestamp: 2017-10-16 01:58:58 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:58:58 -0200
+response: 680000068,690000068 timestamp: 2017-10-16 01:58:58 -0200
+Starting leader election timestamp: 2017-10-16 01:58:58 -0200
+leader_is 192.168.1.105 timestamp: 2017-10-16 01:58:58 -0200
+testing interval 690000069,700000069 timestamp: 2017-10-16 01:58:58 -0200
+Peer 192.168.1.107 request: finish_interval_computation 680000068,690000068 timestamp: 2017-10-16 01:58:59 -0200
+response: ok timestamp: 2017-10-16 01:58:59 -0200
+testing interval 710000071,720000071 timestamp: 2017-10-16 01:58:59 -0200
+Peer 192.168.1.107 request: finish_interval_computation 700000070,710000070 timestamp: 2017-10-16 01:59:00 -0200
+response: ok timestamp: 2017-10-16 01:59:00 -0200
+Peer 192.168.1.107 request: ping timestamp: 2017-10-16 01:59:00 -0200
+response: pong timestamp: 2017-10-16 01:59:00 -0200
+testing interval 730000073,740000073 timestamp: 2017-10-16 01:59:00 -0200
+Peer 192.168.1.107 request: finish_interval_computation 720000072,730000072 timestamp: 2017-10-16 01:59:02 -0200
+response: ok timestamp: 2017-10-16 01:59:02 -0200
+testing interval 750000075,760000075 timestamp: 2017-10-16 01:59:02 -0200
+Peer 192.168.1.107 request: finish_interval_computation 740000074,750000074 timestamp: 2017-10-16 01:59:03 -0200
+response: ok timestamp: 2017-10-16 01:59:03 -0200
+testing interval 770000077,780000077 timestamp: 2017-10-16 01:59:03 -0200
+Peer 192.168.1.107 request: finish_interval_computation 760000076,770000076 timestamp: 2017-10-16 01:59:05 -0200
+response: ok timestamp: 2017-10-16 01:59:05 -0200
+testing interval 790000079,800000079 timestamp: 2017-10-16 01:59:05 -0200
+Peer 192.168.1.107 request: finish_interval_computation 780000078,790000078 timestamp: 2017-10-16 01:59:06 -0200
+response: ok timestamp: 2017-10-16 01:59:06 -0200
+testing interval 810000081,820000081 timestamp: 2017-10-16 01:59:06 -0200
+Peer 192.168.1.107 request: finish_interval_computation 800000080,810000080 timestamp: 2017-10-16 01:59:07 -0200
+response: ok timestamp: 2017-10-16 01:59:07 -0200
+testing interval 830000083,840000083 timestamp: 2017-10-16 01:59:08 -0200
+Peer 192.168.1.107 request: finish_interval_computation 820000082,830000082 timestamp: 2017-10-16 01:59:09 -0200
+response: ok timestamp: 2017-10-16 01:59:09 -0200
+Peer 192.168.1.107 request: leader_election timestamp: 2017-10-16 01:59:09 -0200
+Peer 192.168.1.107 initiated the election timestamp: 2017-10-16 01:59:09 -0200
+Election result: I was elected as the leader timestamp: 2017-10-16 01:59:09 -0200
+response: ["you_were_elected", "850000085,1000000006"] timestamp: 2017-10-16 01:59:09 -0200
+testing interval 850000085,860000085 timestamp: 2017-10-16 01:59:09 -0200
+Peer 192.168.1.107 request: finish_interval_computation 840000084,850000084 timestamp: 2017-10-16 01:59:10 -0200
+response: ok timestamp: 2017-10-16 01:59:10 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:59:10 -0200
+response: 860000086,870000086 timestamp: 2017-10-16 01:59:10 -0200
+testing interval 870000087,880000087 timestamp: 2017-10-16 01:59:10 -0200
+Peer 192.168.1.107 request: finish_interval_computation 860000086,870000086 timestamp: 2017-10-16 01:59:12 -0200
+response: ok timestamp: 2017-10-16 01:59:12 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:59:12 -0200
+response: 880000088,890000088 timestamp: 2017-10-16 01:59:12 -0200
+testing interval 890000089,900000089 timestamp: 2017-10-16 01:59:12 -0200
+Peer 192.168.1.107 request: finish_interval_computation 880000088,890000088 timestamp: 2017-10-16 01:59:13 -0200
+response: ok timestamp: 2017-10-16 01:59:13 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:59:13 -0200
+response: 900000090,910000090 timestamp: 2017-10-16 01:59:13 -0200
+testing interval 910000091,920000091 timestamp: 2017-10-16 01:59:13 -0200
+Peer 192.168.1.107 request: finish_interval_computation 900000090,910000090 timestamp: 2017-10-16 01:59:14 -0200
+response: ok timestamp: 2017-10-16 01:59:14 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:59:14 -0200
+response: 920000092,930000092 timestamp: 2017-10-16 01:59:14 -0200
+testing interval 930000093,940000093 timestamp: 2017-10-16 01:59:14 -0200
+Peer 192.168.1.107 request: finish_interval_computation 920000092,930000092 timestamp: 2017-10-16 01:59:16 -0200
+response: ok timestamp: 2017-10-16 01:59:16 -0200
+Peer 192.168.1.107 request: ping timestamp: 2017-10-16 01:59:16 -0200
+response: pong timestamp: 2017-10-16 01:59:16 -0200
+testing interval 940000094,950000094 timestamp: 2017-10-16 01:59:16 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:59:16 -0200
+response: 950000095,960000095 timestamp: 2017-10-16 01:59:17 -0200
+testing interval 960000096,970000096 timestamp: 2017-10-16 01:59:17 -0200
+Peer 192.168.1.107 request: finish_interval_computation 950000095,960000095 timestamp: 2017-10-16 01:59:18 -0200
+response: ok timestamp: 2017-10-16 01:59:18 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:59:18 -0200
+response: 970000097,980000097 timestamp: 2017-10-16 01:59:18 -0200
+testing interval 980000098,990000098 timestamp: 2017-10-16 01:59:18 -0200
+Peer 192.168.1.107 request: finish_interval_computation 970000097,980000097 timestamp: 2017-10-16 01:59:20 -0200
+response: ok timestamp: 2017-10-16 01:59:20 -0200
+Peer 192.168.1.107 request: new_interval timestamp: 2017-10-16 01:59:20 -0200
+response: 990000099,1000000006 timestamp: 2017-10-16 01:59:20 -0200
+Starting leader election timestamp: 2017-10-16 01:59:20 -0200
+leader_is 192.168.1.105 timestamp: 2017-10-16 01:59:20 -0200
+waiting for new interval or end of primality test timestamp: 2017-10-16 01:59:20 -0200
+testing interval 850000085,860000085 timestamp: 2017-10-16 01:59:20 -0200
+Peer 192.168.1.107 request: finish_interval_computation 990000099,1000000006 timestamp: 2017-10-16 01:59:21 -0200
+response: ok timestamp: 2017-10-16 01:59:21 -0200
+Peer 192.168.1.107 request: ping timestamp: 2017-10-16 01:59:21 -0200
+response: pong timestamp: 2017-10-16 01:59:21 -0200
+waiting for new interval or end of primality test timestamp: 2017-10-16 01:59:22 -0200
+Peer 192.168.1.107 request: is_prime timestamp: 2017-10-16 01:59:22 -0200
+Peer 192.168.1.107sent: 1000000007is prime timestamp: 2017-10-16 01:59:22 -0200

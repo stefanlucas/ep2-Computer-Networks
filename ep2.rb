@@ -18,10 +18,9 @@ class Peer
     @leader = false
     @leader_id = nil
     @quantum = quantum
-    @debug = true
     @t = Time.new
+    @t0 = Time.new
     @filename = "log.txt"
-    @file_mutex = Mutex.new
     @peers_mutex = Mutex.new
 
     File.open(@filename, 'w') { |f| 
@@ -132,7 +131,7 @@ class Peer
           end
           @t = Time.now
         when "get_computation_info"
-          response = @number.to_s + " " + @remaining_interval[:low].to_s + "," + @remaining_interval[:high].to_s
+          response = @number.to_s + " " + @quantum.to_s + " " + @t0.to_s + " " + @remaining_interval[:low].to_s + "," + @remaining_interval[:high].to_s
           @interval_queue.each do |interval|
             response += " " + interval[:low].to_s + "," + interval[:high].to_s
           end
@@ -161,12 +160,14 @@ class Peer
           @peers[socket.peeraddr[3]][:low] = @peers[socket.peeraddr[3]][:high] = false
           response = "ok"
         when "is_prime"
-          puts @number.to_s + " é primo"
+          tf = Time.new - @t0
+          puts @number.to_s + " é primo" + "\ntime: " + tf.to_s + " s"
           write_log "Peer " + socket.peeraddr[3] + "sent: " + @number.to_s + "is prime"
           socket.puts "ok"
           exit(0)
         when "not_prime"
-          puts "Number is not prime " + message[1] + " divides " + @number.to_s
+          tf = Time.new - @t0
+          puts "Number is not prime " + message[1] + " divides " + @number.to_s + "\ntime: " + tf.to_s + " s"
           write_log "Peer " + socket.peeraddr[3] + " sent: number is not prime " + message[1] + " divides " + @number.to_s
           socket.puts "ok"
           exit(0) 
@@ -219,7 +220,8 @@ class Peer
           while i <= @interval[:high] do
             if @number % i == 0
               write_log "Broadcasting: not prime " + i.to_s + " divide " + @number.to_s 
-              puts "Not prime " + i.to_s + " divide " + @number.to_s
+              tf = Time.new - @t0
+              puts "Not prime " + i.to_s + " divide " + @number.to_s + "\ntime: " + tf.to_s + " s"
               message = "not_prime" + " " + i.to_s
               broadcast(message)
               exit(0)
@@ -237,8 +239,9 @@ class Peer
         if @leader
           if check_end() == true
             write_log  "Broadcasting: " + @number.to_s + " is prime"
+            tf = Time.now - @t0
+            puts "The number is prime\ntime: " + tf.to_s + " s"
             broadcast("is_prime")
-            puts "The number is prime"
             exit(0)
           end 
           @interval[:low], @interval[:high] = select_interval()
@@ -382,7 +385,7 @@ class Peer
       @peers.each_key do |id|
         begin
           if message == "is_prime" || message == "not_prime"
-            puts "transmitindo mensagem de fim para o peer " + id
+            puts "sending end message to peer " + id
           end
           socket = TCPSocket.open(id, @port)
           socket.puts message
@@ -424,7 +427,9 @@ class Peer
           puts "Received response " + response.chomp
           response = response.split(/[ \r\n]/)
           @number = response[0].to_i
-          x, y = response[1].split(",")
+          @quantum = response[1].to_i
+          @t0 = Time.parse(response[2])
+          x, y = response[2].split(",")
           @remaining_interval[:low], @remaining_interval[:high] = x.to_i, y.to_i
           for i in 2..(response.size - 1) 
             low, high = response[i].split(",")
@@ -483,8 +488,11 @@ class Peer
   end
 end
 
-if ARGV[0] == nil 
+case ARGV.length
+when 0
   Peer.new(2000)
-else 
+when 1
   Peer.new(2000, ARGV[0].to_i)
+when 2
+  Peer.new(2000, ARGV[0].to_i, ARGV[1].to_i)
 end
